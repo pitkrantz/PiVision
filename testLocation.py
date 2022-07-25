@@ -1,53 +1,36 @@
+import time
+import numpy as np
+import cv2
 
-board = [
-    ["X", "O", "X"],
-    ["X", "O", "O"],
-    ["X", "/", "O"]
-]
-def checkWinner():
-    #checkRows
-    for i in range(3):
-        # check Rows
-        if len(set(board[i])) == 1:
+print("Setting up...")
 
-            if board[i][0] == "X":
-                print("Player 1 has won")
-            
-            if board[i][0] == "O":
-                print("Player 2 has won.")
+cap = cv2.VideoCapture(0)
+time.sleep(1)
 
-            else:
-                pass
+while True:
+    _, frame = cap.read()
 
-        # check Columns
-    for i in range(3):
-        if board[0][i] == board[1][i] == board[2][i]:
-            if board[0][i] == "X":
-                print("Player 1 has won.")
-            
-            if board[0][i] == "O":
-                print("Player 2 has won.")
-            else:
-                pass
-        
-        # check Diagonals
 
-    if board[0][0] == board[1][1] == board[2][2]:
-        if board[1][1] == "X":
-            print("Player 1 has won.")
+    grayFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    blurFrame = cv2.GaussianBlur(grayFrame, (15, 15), 0) 
 
-        if board[1][1] == "O":
-            print("Player 2 has won.")
-        
-        else:
-            pass
-    if board[2][0] == board[1][1] == board[0][2]:
-        if board[1][1] == "X":
-            print("Player 1 has won.")
+    circles = cv2.HoughCircles(blurFrame, cv2.HOUGH_GRADIENT, 1.2, 100, param1= 100, param2 = 35, minRadius = 30, maxRadius = 150)
 
-        if board[1][1] == "O":
-            print("Player 2 has won.")
-        
-        else:
-            pass
-checkWinner()
+
+    if circles is not None:
+        circles = np.uint16(np.around(circles))
+        for i in circles[0, :]:
+            cv2.circle(frame, (i[0],i[1]), i[2], (0, 255, 0), 3)
+
+    cross = cv2.line(frame, (int(frame.shape[1]/2), int(frame.shape[0]/2 - 50)), (int(frame.shape[1]/2), int(frame.shape[0]/2 + 50)), (0, 0, 255), 2)
+    cross = cv2.line(frame, (int(frame.shape[1]/2 - 50), int(frame.shape[0]/2)), (int(frame.shape[1]/2 + 50), int(frame.shape[0]/2)), (0, 0, 255), 2)
+    cv2.imshow("BlurFrame", blurFrame)
+    cv2.imshow("Circles", frame)
+
+
+    key = cv2.waitKey(1)
+    if key == 27:
+        break
+
+cap.release()
+cv2.destroyAllWindows()
