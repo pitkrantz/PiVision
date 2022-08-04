@@ -4,7 +4,7 @@ import cv2
 
 print("Setting up...")
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 time.sleep(1)
 
 while True:
