@@ -1,13 +1,37 @@
 import cv2
+#import simpleTest
 import numpy as np
 from time import sleep
 
 print("Starting...")
 
-counter =0
+counter = 0
 
 cap = cv2.VideoCapture(0)
 sleep(1.5)
+
+class Circle:
+    def __init__(self, x, y, r, number):
+        self.x = x
+        self.y = y
+        self.r = r
+        self.number = 1 
+
+
+def cleanInput(threshold = 200):
+
+    if intersections is None:
+        pass
+
+    delete = []
+    for i in range(1 , len(intersections)):
+
+        if intersections[i - 1][0] - threshold < intersections[i][0] < intersections[i - 1][0] + threshold:
+            if intersections[i - 1][1] - threshold < intersections[i][1] < intersections[i - 1][1] + threshold:
+                delete.append(intersections[i])
+
+    for element in delete:
+        intersections.remove(element)
 
 def deleteDuplicates(inter):
     inter.sort()
@@ -66,9 +90,14 @@ def findIntersections(line1, line2):
 #1920x1080 fir emmer 100 vum rand fort ze sinn
 points = np.array([[100,100],[1820,100],[1820,980],[100,980]], np.int32)
 
+detectedCircles = 0
+frames = 0
+CirclesDuringFrames = []
+
 while True:
     _, frame  = cap.read()
-    
+
+
     cv2.setMouseCallback("Frame", mousePoints)
 
     blank = np.zeros(frame.shape[:2], dtype="uint8")
@@ -105,61 +134,81 @@ while True:
         circles = cv2.HoughCircles(blurFrame, cv2.HOUGH_GRADIENT, 1.2, 100, param1= 100, param2 = 45, minRadius = 20, maxRadius = 150)
 
         if circles is not None:
+            detectedCircles += 1
             circles = np.uint16(np.around(circles))
+            CirclesDuringFrames.append(circles[0])
+            print(CirclesDuringFrames[0])
+
             for i in circles[0, :]:
                 cv2.circle(frame, (i[0],i[1]), i[2], (0, 255, 0), 3)
+
+        frames += 1
+
+        if frames == 10:
+            isCircle = False
+            if detectedCircles >= 8:
+                isCircle = True
+                #print(CirclesDuringFrames)
+            frames = 0
+            detectedCircles = 0
+            CirclesDuringFrames = []
+            print(isCircle)
     
     else:
         caption(False)
 
     edges = cv2.Canny(grayFrame, 50, 150, apertureSize=3)
 
-    lines = cv2.HoughLinesP(edges, 1, np.pi/180, 200, maxLineGap = 100)
+    #lines = cv2.HoughLinesP(edges, 1, np.pi/180, 200, maxLineGap = 100)
 
-    vertical = []
-    horizontal = []
-    intersections = []
+    #vertical = []
+    #horizontal = []
+    #intersections = []
 
-    if lines is not None:
-        for line in lines:
-            x1, y1, x2, y2 = line[0]
+    #if lines is not None:
+    #    for line in lines:
+    #        x1, y1, x2, y2 = line[0]
 
-            if x2- 150 < x1 < x2 + 150:
-                vertical.append([[x1, y1], [x2, y2]])
-                cv2.line(frame, (x1, y1), (x2, y2), (255,0,0), 3)
-            else:
-                horizontal.append([[x1, y1], [x2, y2]])
-                cv2.line(frame, (x1, y1), (x2, y2), (0,0,255), 3)
+    #        if x2- 150 < x1 < x2 + 150:
+    #            vertical.append([[x1, y1], [x2, y2]])
+    #            cv2.line(frame, (x1, y1), (x2, y2), (255,0,0), 3)
+    #        else:
+    #            horizontal.append([[x1, y1], [x2, y2]])
+    #            cv2.line(frame, (x1, y1), (x2, y2), (0,0,255), 3)
     
-    for i in range(len(vertical)):
-        for j in range(len(horizontal)):
-            #first start and endpoint
-            A = vertical[i][0]
-            B = vertical[i][1]
-            #last start and endpoint
-            C = horizontal[j][0]
-            D = horizontal[j][1]
+    #for i in range(len(vertical)):
+    #    for j in range(len(horizontal)):
+    #        #first start and endpoint
+    #        A = vertical[i][0]
+    #        B = vertical[i][1]
+    #        #last start and endpoint
+    #        C = horizontal[j][0]
+    #        D = horizontal[j][1]
 
-            try: 
-                intersectionx, intersectiony = findIntersections((A,B),(C,D))
-                intersections.append([int(intersectionx), int(intersectiony)])
+    #        try: 
+    #            intersectionx, intersectiony = findIntersections((A,B),(C,D))
+    #            intersections.append([int(intersectionx), int(intersectiony)])
 
-            except:
-                pass
+    #        except:
+    #            pass
     
     # sort array based on second element
     # array.sort(key=lambda x:x[1])
-    try:
-        intersections = deleteDuplicates(intersections)
-    except:
-        pass
-    print(intersections)
-    print("""
+    
+    #cleanInput(100)
+        #intersections = deleteDuplicates(intersections)
+        #intersections = simpleTest.CleanIntersections()
+        #intersections = simpleTest.simplify()
+    
+    #print(intersections)
+    #print("""
 
     
-    """)
-    for intersection in intersections:
-        circle = cv2.circle(frame, (int(intersection[0]), int(intersection[1])), 20, (0,255,0), -1)
+   #""")
+    #for intersection in intersections:
+    #    circle = cv2.circle(frame, (int(intersection[0]), int(intersection[1])), 10, (0,255,0), -1)
+
+    #cv2.line(frame, (100,100), (200, 100), (215,66,245), 1)
 
     cv2.imshow("Mask", mask)
     cv2.imshow("Frame", frame)
