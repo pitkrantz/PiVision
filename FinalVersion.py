@@ -1,5 +1,4 @@
 import cv2
-#import simpleTest
 import numpy as np
 from time import sleep
 
@@ -7,15 +6,28 @@ print("Starting...")
 
 counter = 0
 
-cap = cv2.VideoCapture(0)
+board = [
+    # 0    1    2
+    ["/", "/", "/"],    #row 0
+    ["/", "/", "/"],    #row 1
+    ["/", "/", "/"]     #row 2
+]
+
+cap = cv2.VideoCapture(1)
 sleep(1.5)
 
 class Circle:
-    def __init__(self, x, y, r, number):
+    def __init__(self, x, y, r):
         self.x = x
         self.y = y
         self.r = r
-        self.number = 1 
+        self.number = 1
+
+def findRealCircles():
+    print(realcircles)
+
+def updateBoard():
+    print(board)
 
 
 def cleanInput(threshold = 200):
@@ -86,18 +98,20 @@ def findIntersections(line1, line2):
     return x,y
 
     
-
 #1920x1080 fir emmer 100 vum rand fort ze sinn
 points = np.array([[100,100],[1820,100],[1820,980],[100,980]], np.int32)
 
 detectedCircles = 0
 frames = 0
-CirclesDuringFrames = []
+
+wrongcircles = []
+realcircles = []
 
 while True:
+    CirclesDuringFrame = []
+
     _, frame  = cap.read()
-
-
+ 
     cv2.setMouseCallback("Frame", mousePoints)
 
     blank = np.zeros(frame.shape[:2], dtype="uint8")
@@ -136,24 +150,38 @@ while True:
         if circles is not None:
             detectedCircles += 1
             circles = np.uint16(np.around(circles))
-            CirclesDuringFrames.append(circles[0])
-            print(CirclesDuringFrames[0])
+            
+            #realCircles = 
+
+            for circle in circles[0, :]:
+                newcircle = Circle(circle[0], circle[1], circle[2])
+                CirclesDuringFrame.append(newcircle)
+            
 
             for i in circles[0, :]:
                 cv2.circle(frame, (i[0],i[1]), i[2], (0, 255, 0), 3)
 
+        
+
+
+
+        if frames < 10:
+            for i in range(0,len(allcircles)):
+                if allcircles[i].number < 8:
+                    wrongcircles.append(allcircles[i])
+                else:
+                    realcircles.append(allcircles[i])
+            # isCircle = False
+            # if detectedCircles >= 8:
+            #     isCircle = True
+            #     #print(CirclesDuringFrames)
+            # frames = 0
+            # detectedCircles = 0
+            # CirclesDuringFrames = []
+            # print(isCircle)
+
         frames += 1
 
-        if frames == 10:
-            isCircle = False
-            if detectedCircles >= 8:
-                isCircle = True
-                #print(CirclesDuringFrames)
-            frames = 0
-            detectedCircles = 0
-            CirclesDuringFrames = []
-            print(isCircle)
-    
     else:
         caption(False)
 
