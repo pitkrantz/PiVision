@@ -1,41 +1,71 @@
+# board = [
+#     ["O", "/", "/"],
+#     ["/", "O", "/"],
+#     ["/", "/", "/"]
+# ]
 
-intersections = []
+board = [
+    ["O", "X", "O"],
+    ["X", "O", "O"],
+    ["X", "X", "X"]
+]
 
-def simplify():
-    intersections.sort(key=lambda intersections:intersections[0])
-    print(len(intersections))
-    uselessPoints = []
+def checkDraw():
+    freespaces = 0
+    for i in range(0,3):
+        for j in range(0,3):
+            if board[i][j] == "/":
+                freespaces += 1
+    if freespaces == 0 :
+        return True
+    else:
+        return False
 
-    for i in range (len(intersections) - 1):
-        if intersections[i + 1][0] - 50 <= intersections[i][0] <= intersections[i + 1][0] + 50 and intersections[i + 1][1] - 50 <= intersections[i][1] <= intersections[i + 1][1] + 50:
-            uselessPoints.append(intersections[i])
-    #print(uselessPoints)
-    for point in uselessPoints:
-        intersections.remove(point)
+def checkWinner():
+    if board[0][0] == board[0][1] and board[0][1] == board[0][2] and board[0][2] == "X":
+        return "X"
+    if board[0][0] == board[0][1] and board[0][1] == board[0][2] and board[0][2] == "O":
+        return "O"
 
-    uselessPoints = []
-    intersections.sort(key=lambda intersections:intersections[1])
+    if board[1][0] == board[1][1] and board[1][1] == board[1][2] and board[1][2] == "X":
+        return "X"
+    if board[1][0] == board[1][1] and board[1][1] == board[1][2] and board[1][2] == "O":
+        return "O"
+        
+    if board[2][0] == board[2][1] and board[2][1] == board[2][2] and board[2][2] == "X":
+        return "X"
+    if board[2][0] == board[2][1] and board[2][1] == board[2][2] and board[2][2] == "O":
+        return "O"
 
-    for i in range (len(intersections) - 1):
-        if intersections[i + 1][0] - 50 <= intersections[i][0] <= intersections[i + 1][0] + 50 and intersections[i + 1][1] - 50 <= intersections[i][1] <= intersections[i + 1][1] + 50:
-            uselessPoints.append(intersections[i])
-    #print(uselessPoints)
-    for point in uselessPoints:
-        intersections.remove(point)
     
-    #print(intersections)
-    #print(len(intersections))
+    if board[0][0] == board[1][0] and board[1][0] == board[2][0] and board[2][0] == "X":
+        return "X"
+    if board[0][0] == board[1][0] and board[1][0] == board[2][0] and board[2][0] == "O":
+        return "O"
+
+    if board[0][1] == board[1][1] and board[1][1] == board[2][1] and board[2][1] == "X":
+        return "X"
+    if board[0][1] == board[1][1] and board[1][1] == board[2][1] and board[2][1] == "O":
+        return "O"
+        
+    if board[0][2] == board[1][2] and board[1][2] == board[2][2] and board[2][2] == "X":
+        return "X"
+    if board[0][2] == board[1][2] and board[1][2] == board[2][2] and board[2][2] == "O":
+        return "O"
 
 
-def CleanIntersections():
-    delete = []
-    for i in range(len(intersections)):
-        if intersections[i][0] > 0 and intersections[i][0] < 1920 and intersections[i][1] > 0 and intersections[i][1] < 1080:
-            pass
+    if board[0][0] == board[1][1] and board[1][1] == board[2][2] and board[2][2] == "X":
+        return "X"
+    if board[0][0] == board[1][1] and board[1][1] == board[2][2] and board[2][2] == "O":
+        return "O"
 
-        else:
-            delete.append(i)
+    if board[0][2] == board[1][1] and board[1][1] == board[2][0] and board[2][0] == "X":
+        return "X"
+    if board[0][2] == board[1][1] and board[1][1] == board[2][0] and board[2][0] == "O":
+        return "O"
 
-    delete = deleteDuplicates(delete)
-    for i in reversed(delete):
-        intersections.pop(i)
+    if checkDraw():
+        return 0
+    return None
+
+print(checkWinner())
