@@ -13,11 +13,6 @@ class board:
             ]
         self.gameover = False
 
-
-checkGameOver(board):
-    if board.gameover == 0:
-        print("Hello")
-
 playingboard = board
 
 rounds = 0
@@ -27,6 +22,7 @@ class player:
     def __init__(self, symbol):
         self.symbol = symbol
 
+class 
 player1 = player("X")
 player2 = player("O")
 
