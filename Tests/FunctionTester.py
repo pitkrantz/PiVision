@@ -1,31 +1,25 @@
-board = [
-    # 0    1    2
-    ["/", "/", "/"],    #row 0
-    ["/", "/", "/"],    #row 1
-    ["/", "/", "/"]     #row 2
-]
+class Circle:
+    def __init__(self, x, y, r):
+        self.x = x
+        self.y = y
+        self.r = r
+        self.number = 1
+        self.row = None
+        self.column = None
 
-oldboard = [
-    # 0    1    2
-    ["/", "/", "/"],    #row 0
-    ["/", "/", "O"],    #row 1
-    ["/", "/", "/"]     #row 2
-]
+newcircle = Circle(33, 21, 10)
+realCircles = [newcircle]
 
-def checkBoard():
-    changed = False
-    for i in range(0,3):
-        for j in range(0,3):
-            if board[i][j] == oldboard[i][j]:
-                pass
+rows = [10, 20 ,30]
+
+for circle in realCircles:
+        for i in range(0, len(rows)):
+            if 10 < circle.y and circle.y < 20:
+                circle.row = i
             else:
-                changed = True
-                changedRow = i
-                changedColumn = j
-    if changed:
-        return (changed, changedRow, changedColumn)
-    else:
-        return (changed, None, None)
-
-boardhasChanged, changedRow, changedColumn = checkBoard()
-print(boardhasChanged, changedRow, changedColumn)
+                circle.row = None
+            if 30 < circle.x and circle.x < 40:
+                circle.column = i
+            else:
+                circle.column = None
+            print(circle.row, circle.column)

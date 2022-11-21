@@ -6,6 +6,13 @@ print("Starting...")
 
 counter = 0
 
+class player:
+    def __init__(self, symbol):
+        self.symbol = symbol
+
+ai = player("X")
+human = player("O")
+
 board = [
     # 0    1    2
     ["/", "/", "/"],    #row 0
@@ -13,8 +20,15 @@ board = [
     ["/", "/", "/"]     #row 2
 ]
 
-cap = cv2.VideoCapture(0)
-sleep(1.5)
+oldboard = [
+    # 0    1    2
+    ["/", "/", "/"],    #row 0
+    ["/", "/", "/"],    #row 1
+    ["/", "/", "/"]     #row 2
+]
+
+cap = cv2.VideoCapture(1)
+sleep(3)
 
 class row:
     def __init__(self, id, yi, yf):
@@ -51,81 +65,140 @@ for i in range(0,3):
     newrow = row(i, yboard[i], yboard[i+1])
     rows.append(newrow)
 
-print(len(rows), len(columns))
+def checkDraw():
+    freespaces = 0
+    for i in range(0,3):
+        for j in range(0,3):
+            if board[i][j] == "/":
+                freespaces += 1
+    if freespaces == 0 :
+        return True
+    else:
+        return False
 
 def checkWinner():
-    #checkRows
-    for i in range(3):
-        # check Rows
-        if len(set(board[i])) == 1:
+    if board[0][0] == board[0][1] and board[0][1] == board[0][2] and board[0][2] == "X":
+        return "X"
+    if board[0][0] == board[0][1] and board[0][1] == board[0][2] and board[0][2] == "O":
+        return "O"
 
-            if board[i][0] == "X":
-                return 1
-            
-            if board[i][0] == "O":
-                return 2
-
-            else:
-                pass
-
-        # check Columns
-    for i in range(3):
-        if board[0][i] == board[1][i] == board[2][i]:
-            if board[0][i] == "X":
-                return 1
-            
-            if board[0][i] == "O":
-                return 2
-            else:
-                pass
+    if board[1][0] == board[1][1] and board[1][1] == board[1][2] and board[1][2] == "X":
+        return "X"
+    if board[1][0] == board[1][1] and board[1][1] == board[1][2] and board[1][2] == "O":
+        return "O"
         
-        # check Diagonals
+    if board[2][0] == board[2][1] and board[2][1] == board[2][2] and board[2][2] == "X":
+        return "X"
+    if board[2][0] == board[2][1] and board[2][1] == board[2][2] and board[2][2] == "O":
+        return "O"
 
-    if board[0][0] == board[1][1] == board[2][2]:
-        if board[1][1] == "X":
+    
+    if board[0][0] == board[1][0] and board[1][0] == board[2][0] and board[2][0] == "X":
+        return "X"
+    if board[0][0] == board[1][0] and board[1][0] == board[2][0] and board[2][0] == "O":
+        return "O"
+
+    if board[0][1] == board[1][1] and board[1][1] == board[2][1] and board[2][1] == "X":
+        return "X"
+    if board[0][1] == board[1][1] and board[1][1] == board[2][1] and board[2][1] == "O":
+        return "O"
+        
+    if board[0][2] == board[1][2] and board[1][2] == board[2][2] and board[2][2] == "X":
+        return "X"
+    if board[0][2] == board[1][2] and board[1][2] == board[2][2] and board[2][2] == "O":
+        return "O"
+
+
+    if board[0][0] == board[1][1] and board[1][1] == board[2][2] and board[2][2] == "X":
+        return "X"
+    if board[0][0] == board[1][1] and board[1][1] == board[2][2] and board[2][2] == "O":
+        return "O"
+
+    if board[0][2] == board[1][1] and board[1][1] == board[2][0] and board[2][0] == "X":
+        return "X"
+    if board[0][2] == board[1][1] and board[1][1] == board[2][0] and board[2][0] == "O":
+        return "O"
+
+    if checkDraw():
+        return 0
+    return None
+
+
+def bestMove():
+    bestScore = -800
+    move = [0, 0]
+    for i in range(0,3):
+        for j in range(0,3):
+            if(board[i][j] == "/"):
+                board[i][j] = ai.symbol
+                score = minimax(board, False)
+                board[i][j] = "/"
+                if(score > bestScore):
+                    bestScore = score
+                    move = [i, j]
+                
+    board[move[0]][move[1]] = ai.symbol
+
+def minimax(playingboard, isMaximizing):
+    result = checkWinner()
+    if result != None:
+        if result == ai.symbol:
             return 1
+        elif result == human.symbol:
+            return -1
+        if result == 0:
+            return 0
 
-        if board[1][1] == "O":
-            return 2
-        
-        else:
-            pass
-    if board[2][0] == board[1][1] == board[0][2]:
-        if board[1][1] == "X":
-            return 1
+    
+    if (isMaximizing):
+        bestScore = -800
+        for i in range(0,3):
+            for j in range(0,3):
+                if(playingboard[i][j] == "/"):
+                    playingboard[i][j] = ai.symbol
+                    score = minimax(playingboard, False)
+                    playingboard[i][j] = "/"
+                    if (score > bestScore):
+                        bestScore = score
+        return bestScore
 
-        if board[1][1] == "O":
-            return 2
-        
-        else:
-            pass
+    else:
+        bestScore = 800
+        for i in range(0,3):
+            for j in range(0,3):
+                if(playingboard[i][j] == "/"):
+                    playingboard[i][j] = human.symbol
+                    score = minimax(playingboard, True)
+                    playingboard[i][j] = "/"
+                    if (score < bestScore):
+                        bestScore = score
+        return bestScore
 
-def checkboard():
+def checkBoard():
+    changed = False
+    for i in range(0,3):
+        for j in range(0,3):
+            if board[i][j] == oldboard[i][j]:
+                pass
+            else:
+                changed = True
+                changedRow = i
+                changedColumn = j
+    if changed:
+        return (changed, changedRow, changedColumn)
+    else:
+        return (changed, None, None)
+
+def updateBoard():
     for circle in realCircles:
         for i in range(0, len(rows)):
             if rows[i].yi < circle.y and circle.y < rows[i].yf:
                 circle.row = i
             if columns[i].xi < circle.x and circle.x < columns[i].xf:
                 circle.column = i
-
-def updateboard():
-    changed = False
     for circle in realCircles:
-        if board[circle.row][circle.column] == "/":
-            board[circle.row][circle.column] = "O"
-            changedField = [circle.row, circle.column]
-            changed = True
-        else:
-            print("No changes")
-            #print("Error, something has gone wrong while updating the board!")
-
-    if changed == True:
-        print("Bot reaction")
-    
-    return changed
-    print(board)
-
-
+        board[circle.row][circle.column] = "O"
+        print(board)
 class Circle:
     def __init__(self, x, y, r):
         self.x = x
@@ -134,7 +207,6 @@ class Circle:
         self.number = 1
         self.row = None
         self.column = None
-
 
 def deleteCopies(inputCircles, threshhold = 40):
     Copies = []
@@ -184,8 +256,6 @@ def CheckCircles(inputCircles, threshhold = 40):
     
     return inputCircles
 
-
-
 def mousePoints(event, x, y, flags, params):
     global counter
     if event == cv2.EVENT_LBUTTONDOWN:
@@ -198,8 +268,6 @@ def mousePoints(event, x, y, flags, params):
             counter = 0
         else:
             counter = 0
-
-        #print(x,y)
 
 def text(text, position):
     cv2.putText(frame, str(text),position,cv2.FONT_HERSHEY_SIMPLEX, 5, (0,0,0), 5, cv2.LINE_AA)
@@ -276,26 +344,30 @@ while True:
 
             for i in circles[0, :]:
                 cv2.circle(frame, (i[0],i[1]), i[2], (0, 255, 0), 3)
-
+        
         if frames == 20:
 
-            realCircles = CheckCircles(CombinedCircles)
+            realCircles = CheckCircles(CombinedCircles, 100)
             
             for circle in realCircles:
                 if circle.number <= 19:
                     realCircles.remove(circle)
 
-            
-            checkboard()
-            if updateboard():
+            updateBoard()
+
+            changed, row, column = checkBoard()
+            oldboard = board
+
+            if changed:
+                bestMove()
                 print("Bot makes moves")
 
-
-
-            for i in range(0, len(realCircles)):
-                print(realCircles[i].row)
-
             numberofCircles = len(realCircles)
+
+            try:
+                print(CombinedCircles[0].x, CombinedCircles[0].y, CombinedCircles[0].r)
+            except:
+                print("No circles")
             CombinedCircles = []
             realCircles = []
             frames = 0
@@ -310,7 +382,6 @@ while True:
 
     cv2.imshow("Mask", mask)
     cv2.imshow("Frame", frame)
-
 
     key = cv2.waitKey(1)
     if key == 27:
