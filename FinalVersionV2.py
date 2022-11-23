@@ -13,6 +13,8 @@ class player:
 ai = player("X")
 human = player("O")
 
+starting = True #If True bot starts else player starts however player always stays O
+
 board = [
     # 0    1    2
     ["/", "/", "/"],    #row 0
@@ -199,6 +201,7 @@ def updateBoard():
     for circle in realCircles:
         board[circle.row][circle.column] = "O"
         print(board)
+
 class Circle:
     def __init__(self, x, y, r):
         self.x = x
@@ -289,6 +292,10 @@ numberofCircles = 0
 
 CombinedCircles = []
 realCirlces = []
+
+
+if starting:
+    bestMove()
 
 while True:
     CirclesDuringFrame = []
