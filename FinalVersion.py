@@ -6,7 +6,21 @@ print("Starting...")
 
 counter = 0
 
+class player:
+    def __init__(self, symbol):
+        self.symbol = symbol
+
+ai = player("X")
+human = player("O")
+
 board = [
+    # 0    1    2
+    ["/", "/", "/"],    #row 0
+    ["/", "/", "/"],    #row 1
+    ["/", "/", "/"]     #row 2
+]
+
+oldboard = [
     # 0    1    2
     ["/", "/", "/"],    #row 0
     ["/", "/", "/"],    #row 1
@@ -16,44 +30,243 @@ board = [
 cap = cv2.VideoCapture(1)
 sleep(1.5)
 
+class row:
+    def __init__(self, id, yi, yf):
+        self.id = id
+        self.yi = yi
+        self.yf = yf
+
+class column:
+    def __init__(self, id, xi, xf):
+        self.id = id
+        self.xi = xi
+        self.xf = xf
+
+columns = []
+x0 = 100
+x1 = 580
+x2 = 1160
+x3 = 1740
+
+xboard = [x0,x1,x2,x3]
+
+rows = []
+y0 = 100
+y1 = 300
+y2 = 600
+y3 = 900
+
+yboard = [y0,y1,y2,y3]
+
+for i in range(0,3):
+    newcolumn = column(i, xboard[i], xboard[i+1])
+    columns.append(newcolumn)
+
+    newrow = row(i, yboard[i], yboard[i+1])
+    rows.append(newrow)
+
+print(len(rows), len(columns))
+
+def checkDraw():
+    freespaces = 0
+    for i in range(0,3):
+        for j in range(0,3):
+            if board[i][j] == "/":
+                freespaces += 1
+    if freespaces == 0 :
+        return True
+    else:
+        return False
+
+def checkWinner():
+    if board[0][0] == board[0][1] and board[0][1] == board[0][2] and board[0][2] == "X":
+        return "X"
+    if board[0][0] == board[0][1] and board[0][1] == board[0][2] and board[0][2] == "O":
+        return "O"
+
+    if board[1][0] == board[1][1] and board[1][1] == board[1][2] and board[1][2] == "X":
+        return "X"
+    if board[1][0] == board[1][1] and board[1][1] == board[1][2] and board[1][2] == "O":
+        return "O"
+        
+    if board[2][0] == board[2][1] and board[2][1] == board[2][2] and board[2][2] == "X":
+        return "X"
+    if board[2][0] == board[2][1] and board[2][1] == board[2][2] and board[2][2] == "O":
+        return "O"
+
+    
+    if board[0][0] == board[1][0] and board[1][0] == board[2][0] and board[2][0] == "X":
+        return "X"
+    if board[0][0] == board[1][0] and board[1][0] == board[2][0] and board[2][0] == "O":
+        return "O"
+
+    if board[0][1] == board[1][1] and board[1][1] == board[2][1] and board[2][1] == "X":
+        return "X"
+    if board[0][1] == board[1][1] and board[1][1] == board[2][1] and board[2][1] == "O":
+        return "O"
+        
+    if board[0][2] == board[1][2] and board[1][2] == board[2][2] and board[2][2] == "X":
+        return "X"
+    if board[0][2] == board[1][2] and board[1][2] == board[2][2] and board[2][2] == "O":
+        return "O"
+
+
+    if board[0][0] == board[1][1] and board[1][1] == board[2][2] and board[2][2] == "X":
+        return "X"
+    if board[0][0] == board[1][1] and board[1][1] == board[2][2] and board[2][2] == "O":
+        return "O"
+
+    if board[0][2] == board[1][1] and board[1][1] == board[2][0] and board[2][0] == "X":
+        return "X"
+    if board[0][2] == board[1][1] and board[1][1] == board[2][0] and board[2][0] == "O":
+        return "O"
+
+    if checkDraw():
+        return 0
+    return None
+
+
+def bestMove():
+    bestScore = -800
+    move = [0, 0]
+    for i in range(0,3):
+        for j in range(0,3):
+            if(board[i][j] == "/"):
+                board[i][j] = ai.symbol
+                score = minimax(board, False)
+                board[i][j] = "/"
+                if(score > bestScore):
+                    bestScore = score
+                    move = [i, j]
+                
+    board[move[0]][move[1]] = ai.symbol
+
+def minimax(playingboard, isMaximizing):
+    result = checkWinner()
+    if result != None:
+        if result == ai.symbol:
+            return 1
+        elif result == human.symbol:
+            return -1
+        if result == 0:
+            return 0
+
+    
+    if (isMaximizing):
+        bestScore = -800
+        for i in range(0,3):
+            for j in range(0,3):
+                if(playingboard[i][j] == "/"):
+                    playingboard[i][j] = ai.symbol
+                    score = minimax(playingboard, False)
+                    playingboard[i][j] = "/"
+                    if (score > bestScore):
+                        bestScore = score
+        return bestScore
+
+    else:
+        bestScore = 800
+        for i in range(0,3):
+            for j in range(0,3):
+                if(playingboard[i][j] == "/"):
+                    playingboard[i][j] = human.symbol
+                    score = minimax(playingboard, True)
+                    playingboard[i][j] = "/"
+                    if (score < bestScore):
+                        bestScore = score
+        return bestScore
+
+def checkboard():
+    for circle in realCircles:
+        for i in range(0, len(rows)):
+            if rows[i].yi < circle.y and circle.y < rows[i].yf:
+                circle.row = i
+            if columns[i].xi < circle.x and circle.x < columns[i].xf:
+                circle.column = i
+
+def updateboard():
+    changed = False
+    # for circle in realCircles:
+    #     if board[circle.row][circle.column] == "/":
+    #         board[circle.row][circle.column] = "O"
+    #         changedField = [circle.row, circle.column]
+    #         changed = True
+    #     else:
+    #         print("No changes")
+    #         #print("Error, something has gone wrong while updating the board!")
+
+    for i in range(0,3):
+        for j in range(0,3):
+            if board[i][j] == oldboard[i][j]:
+                pass
+            else:
+                changed = True
+                changedRow = i
+                changedColumn = j
+    if changed:
+        return (changed, changedRow, changedColumn)
+    else:
+        return (changed, None,None)
+
 class Circle:
     def __init__(self, x, y, r):
         self.x = x
         self.y = y
         self.r = r
         self.number = 1
-
-def findRealCircles():
-    print(realcircles)
-
-def updateBoard():
-    print(board)
+        self.row = None
+        self.column = None
 
 
-def cleanInput(threshold = 200):
+def deleteCopies(inputCircles, threshhold = 40):
+    Copies = []
 
-    if intersections is None:
-        pass
+    for i in range(0,len(inputCircles)):
+        if i == len(inputCircles)-1:
+            pass
+        else:
+            for j in range(i, len(inputCircles)):
+                if j == len(inputCircles)-1:
+                    pass
+                else:
+                    if inputCircles[j+1].x - threshhold < inputCircles[i].x and inputCircles[i].x < inputCircles[j+1].x + threshhold and inputCircles[j+1].y - threshhold < inputCircles[i].y and inputCircles[i].y < inputCircles[j+1].y + threshhold:
+                        Copies.append(j+1)
 
-    delete = []
-    for i in range(1 , len(intersections)):
-
-        if intersections[i - 1][0] - threshold < intersections[i][0] < intersections[i - 1][0] + threshold:
-            if intersections[i - 1][1] - threshold < intersections[i][1] < intersections[i - 1][1] + threshold:
-                delete.append(intersections[i])
-
-    for element in delete:
-        intersections.remove(element)
-
-def deleteDuplicates(inter):
-    inter.sort()
-    for i in range(1, len(inter)-1):
-        if inter[i] == inter[i-1]:
-            inter.pop(i)
+    Copies.reverse()
+    for i in Copies:
+        inputCircles.pop(i)
     
-    if inter[0] == inter[1]:
-        inter.pop(0)
-    return inter
+    return inputCircles
+
+def CheckCircles(inputCircles, threshhold = 40):
+    Copies = []
+
+    for i in range(0,len(inputCircles)):
+        if i == len(inputCircles)-1:
+            pass
+        else:
+            for j in range(i, len(inputCircles)):
+                if j == len(inputCircles)-1:
+                    pass
+                else:
+                    if inputCircles[j+1].x - threshhold < inputCircles[i].x and inputCircles[i].x < inputCircles[j+1].x + threshhold and inputCircles[j+1].y - threshhold < inputCircles[i].y and inputCircles[i].y < inputCircles[j+1].y + threshhold:
+                        inputCircles[i].number += 1
+                        Copies.append(j+1)
+
+    if len(Copies) != 0:
+        realCopies = []
+        for i in Copies:
+            if i not in realCopies:
+                realCopies.append(i)
+
+        realCopies.sort()
+        realCopies.reverse()
+        for i in realCopies:
+            inputCircles.pop(i)
+    
+    return inputCircles
+
+
 
 def mousePoints(event, x, y, flags, params):
     global counter
@@ -70,8 +283,8 @@ def mousePoints(event, x, y, flags, params):
 
         #print(x,y)
 
-def text(text, offset):
-    cv2.putText(frame, str(text), (int(frame.shape[1]/2) - offset,int(frame.shape[0]/2)),cv2.FONT_HERSHEY_SIMPLEX, 5, (0,0,0), 5, cv2.LINE_AA)
+def text(text, position):
+    cv2.putText(frame, str(text),position,cv2.FONT_HERSHEY_SIMPLEX, 5, (0,0,0), 5, cv2.LINE_AA)
 
 def caption(active):
 
@@ -80,37 +293,23 @@ def caption(active):
     else:
         cv2.putText(frame, "INACTIVE", (100, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
 
-def findIntersections(line1, line2):
-    xdiff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
-    ydiff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
-
-    def det(a, b):
-        return a[0] * b[1] - a[1] * b[0]
-
-    div = det(xdiff, ydiff)
-    if div == 0:
-       raise Exception('lines do not intersect')
-
-    d = (det(*line1), det(*line2))
-    x = det(d, xdiff) / div
-    y = det(d, ydiff) / div
-
-    return x,y
-
-    
 #1920x1080 fir emmer 100 vum rand fort ze sinn
 points = np.array([[100,100],[1820,100],[1820,980],[100,980]], np.int32)
 
 detectedCircles = 0
 frames = 0
 
-wrongcircles = []
-realcircles = []
+numberofCircles = 0
+
+CombinedCircles = []
+realCirlces = []
 
 while True:
     CirclesDuringFrame = []
 
     _, frame  = cap.read()
+
+    frame = cv2.rotate(frame, cv2.ROTATE_180)
  
     cv2.setMouseCallback("Frame", mousePoints)
 
@@ -150,96 +349,53 @@ while True:
         if circles is not None:
             detectedCircles += 1
             circles = np.uint16(np.around(circles))
-            
-            #realCircles = 
 
             for circle in circles[0, :]:
                 newcircle = Circle(circle[0], circle[1], circle[2])
                 CirclesDuringFrame.append(newcircle)
-            
+                CirclesDuringFrame = deleteCopies(CirclesDuringFrame)
+
+                for circle in CirclesDuringFrame:
+                    CombinedCircles.append(circle)
 
             for i in circles[0, :]:
                 cv2.circle(frame, (i[0],i[1]), i[2], (0, 255, 0), 3)
 
         
+        if frames == 20:
+
+            realCircles = CheckCircles(CombinedCircles)
+            
+            for circle in realCircles:
+                if circle.number <= 19:
+                    realCircles.remove(circle)
+
+            checkboard()
+            if updateboard():
+                print("Bot makes moves")
 
 
 
-        if frames < 10:
-            for i in range(0,len(allcircles)):
-                if allcircles[i].number < 8:
-                    wrongcircles.append(allcircles[i])
-                else:
-                    realcircles.append(allcircles[i])
-            # isCircle = False
-            # if detectedCircles >= 8:
-            #     isCircle = True
-            #     #print(CirclesDuringFrames)
-            # frames = 0
-            # detectedCircles = 0
-            # CirclesDuringFrames = []
-            # print(isCircle)
+            for i in range(0, len(realCircles)):
+                print(realCircles[i].row)
 
+            numberofCircles = len(realCircles)
+            print(CombinedCircles)
+            CombinedCircles = []
+            realCircles = []
+            frames = 0
+            
         frames += 1
 
     else:
         caption(False)
 
-    edges = cv2.Canny(grayFrame, 50, 150, apertureSize=3)
-
-    #lines = cv2.HoughLinesP(edges, 1, np.pi/180, 200, maxLineGap = 100)
-
-    #vertical = []
-    #horizontal = []
-    #intersections = []
-
-    #if lines is not None:
-    #    for line in lines:
-    #        x1, y1, x2, y2 = line[0]
-
-    #        if x2- 150 < x1 < x2 + 150:
-    #            vertical.append([[x1, y1], [x2, y2]])
-    #            cv2.line(frame, (x1, y1), (x2, y2), (255,0,0), 3)
-    #        else:
-    #            horizontal.append([[x1, y1], [x2, y2]])
-    #            cv2.line(frame, (x1, y1), (x2, y2), (0,0,255), 3)
-    
-    #for i in range(len(vertical)):
-    #    for j in range(len(horizontal)):
-    #        #first start and endpoint
-    #        A = vertical[i][0]
-    #        B = vertical[i][1]
-    #        #last start and endpoint
-    #        C = horizontal[j][0]
-    #        D = horizontal[j][1]
-
-    #        try: 
-    #            intersectionx, intersectiony = findIntersections((A,B),(C,D))
-    #            intersections.append([int(intersectionx), int(intersectiony)])
-
-    #        except:
-    #            pass
-    
-    # sort array based on second element
-    # array.sort(key=lambda x:x[1])
-    
-    #cleanInput(100)
-        #intersections = deleteDuplicates(intersections)
-        #intersections = simpleTest.CleanIntersections()
-        #intersections = simpleTest.simplify()
-    
-    #print(intersections)
-    #print("""
-
-    
-   #""")
-    #for intersection in intersections:
-    #    circle = cv2.circle(frame, (int(intersection[0]), int(intersection[1])), 10, (0,255,0), -1)
-
-    #cv2.line(frame, (100,100), (200, 100), (215,66,245), 1)
+    #boardview = cv2.putText(frame, str(board),(100, 200),cv2.FONT_HERSHEY_SIMPLEX, 2, (0,0,0), 2, cv2.LINE_AA)
+    numberofCirclesView = cv2.putText(frame, "Number of Circles: " + str(numberofCircles),(100, 250),cv2.FONT_HERSHEY_SIMPLEX, 2, (0,0,0), 2, cv2.LINE_AA)
 
     cv2.imshow("Mask", mask)
     cv2.imshow("Frame", frame)
+
 
     key = cv2.waitKey(1)
     if key == 27:
