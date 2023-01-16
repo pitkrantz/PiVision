@@ -1,6 +1,11 @@
 import cv2
 import numpy as np
 from time import sleep
+from math import sqrt
+
+
+#notes i could use distance between the found circles and the calibration points to find matching square
+# count how many of the calibrations are possible if 1 corner next to it if 2 midle between them else middle
 
 print("Starting...")
 
@@ -12,6 +17,12 @@ class player:
 
 ai = player("X")
 human = player("O")
+
+diagonal = 420
+
+# make the program not do circle detection when inactive until button is pressed keybin
+
+show = False
 
 starting = True #If True bot starts else player starts however player always stays O
 
@@ -29,7 +40,7 @@ oldboard = [
     ["/", "/", "/"]     #row 2
 ]
 
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 sleep(3)
 
 class row:
@@ -43,6 +54,11 @@ class column:
         self.id = id
         self.xi = xi
         self.xf = xf
+
+# playing field 300x300 per square so 900x900 in total which means that the points should 
+# respect the resolution and form a 900x900 matrix in the middle
+# A = (810, 390) B = (1110, 390) C = (810, 690) D = (810, 690)
+centerPoints = [[810,390], [1110, 390], [1110, 690], [810, 690]]
 
 columns = []
 x0 = 100
@@ -77,6 +93,9 @@ def checkDraw():
         return True
     else:
         return False
+
+def distance(point1, point2):
+    return sqrt((point2[0] - point1[0])**2 + (point2[1] - point1[1])**2)
 
 def checkWinner():
     if board[0][0] == board[0][1] and board[0][1] == board[0][2] and board[0][2] == "X":
@@ -259,15 +278,33 @@ def CheckCircles(inputCircles, threshhold = 40):
     
     return inputCircles
 
-def mousePoints(event, x, y, flags, params):
-    global counter
-    if event == cv2.EVENT_LBUTTONDOWN:
-        if counter < 4:
-            points[counter][0] = x
-            points[counter][1] = y
+# def mousePoints(event, x, y, flags, params):
+#     global counter
+#     if event == cv2.EVENT_LBUTTONDOWN:
+#         if counter < 4:
+#             points[counter][0] = x
+#             points[counter][1] = y
+#             counter += 1
+#         elif counter == 4:
+#             counter = 0
+#         else:
+#             counter = 0
 
+def calibrate_playingfield(event, x, y, flags, params):
+    global counter
+    global diagonal
+    if event == cv2.EVENT_LBUTTONDOWN: 
+        if counter < 4:                            
+            centerPoints[counter][0] = x      
+            centerPoints[counter][1] = y     
             counter += 1
+            diagonal = int(distance(centerPoints[0], centerPoints[2]))
+            print(diagonal)
+
         elif counter == 4:
+            for point in centerPoints:
+                point[0] = -10 
+                point[1] = -10 
             counter = 0
         else:
             counter = 0
@@ -283,6 +320,7 @@ def caption(active):
         cv2.putText(frame, "INACTIVE", (100, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
 
 #1920x1080 fir emmer 100 vum rand fort ze sinn
+#net mei benotzt well keng mask mei fir ze kucken
 points = np.array([[100,100],[1820,100],[1820,980],[100,980]], np.int32)
 
 detectedCircles = 0
@@ -302,20 +340,25 @@ while True:
 
     _, frame  = cap.read()
  
-    cv2.setMouseCallback("Frame", mousePoints)
+    cv2.setMouseCallback("Frame", calibrate_playingfield)
 
     blank = np.zeros(frame.shape[:2], dtype="uint8")
-    polymask = cv2.fillPoly(blank, [points], 255)
+   # polymask = cv2.fillPoly(blank, [points], 255)
 
-    masked = cv2.bitwise_and(frame, frame, mask=polymask)
+   # masked = cv2.bitwise_and(frame, frame, mask=polymask)
 
-    for i in range(len(points)):
-        if i < 3:
-            lines = cv2.line(frame, (points[i][0], points[i][1]), (points[i+1][0], points[i+1][1]), (255, 220, 5), 2)
-        else:
-            lines = cv2.line(frame, (points[i][0], points[i][1]), (points[0][0], points[0][1]), (255, 220, 5), 2)
-        rectangle = cv2.rectangle(frame, (int(points[i][0] - 10), int(points[i][1] - 10)), (int(points[i][0] + 10), int(points[i][1] + 10)), (255, 220, 5), -1)
-    
+    # for i in range(len(points)):
+    #     if i < 3:
+    #         lines = cv2.line(frame, (points[i][0], points[i][1]), (points[i+1][0], points[i+1][1]), (255, 220, 5), 2)
+    #     else:
+    #         lines = cv2.line(frame, (points[i][0], points[i][1]), (points[0][0], points[0][1]), (255, 220, 5), 2)
+    #     rectangle = cv2.rectangle(frame, (int(points[i][0] - 10), int(points[i][1] - 10)), (int(points[i][0] + 10), int(points[i][1] + 10)), (255, 220, 5), -1)
+
+
+    # draw calibration rectangles to find center
+    for point in centerPoints:
+        rectangle = cv2.rectangle(frame, ((int(point[0] - 5)), int(point[1] - 5)), (int(point[0] + 5), int(point[1] + 5)), (0, 255, 0), -1)
+
     # Mask preview
     # cv2.imshow("Masked", masked)
 
@@ -326,14 +369,15 @@ while True:
 
     lowerLimit = (shadow, shadow, shadow)
     upperLimit = (light, light, light)
-    mask = cv2.inRange(masked, lowerLimit, upperLimit)
-
+   # mask = cv2.inRange(masked, lowerLimit, upperLimit)
+    mask = cv2.inRange(frame, lowerLimit, upperLimit)
     # Methode 2°: Bessen besser mengen ech wei Methode 1°   !!!!AKTIV!!!!
 
-    grayFrame = cv2.cvtColor(masked, cv2.COLOR_BGR2GRAY)
+   # grayFrame = cv2.cvtColor(masked, cv2.COLOR_BGR2GRAY)
+    grayFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     blurFrame = cv2.GaussianBlur(grayFrame, (13, 13), 0)
 
-    if counter == 4:
+    if show:
         caption(True)
         circles = cv2.HoughCircles(blurFrame, cv2.HOUGH_GRADIENT, 1.2, 100, param1= 100, param2 = 45, minRadius = 20, maxRadius = 150)
 
@@ -391,7 +435,9 @@ while True:
     cv2.imshow("Frame", frame)
 
     key = cv2.waitKey(1)
-    if key == 27:
+    if key == 32:
+        show = not show
+    elif key == 27:
         break
 
 cap.release()
