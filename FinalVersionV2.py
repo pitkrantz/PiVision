@@ -95,7 +95,7 @@ def checkDraw():
         return False
 
 def distance(point1, point2):
-    return sqrt((point2[0] - point1[0])**2 + (point2[1] - point1[1])**2)
+    return int(sqrt((point2[0] - point1[0])**2 + (point2[1] - point1[1])**2))
 
 def checkWinner():
     if board[0][0] == board[0][1] and board[0][1] == board[0][2] and board[0][2] == "X":
@@ -210,16 +210,45 @@ def checkBoard():
     else:
         return (changed, None, None)
 
+# def updateBoard():
+#     for circle in realCircles:
+#         for i in range(0, len(rows)):
+#             if rows[i].yi < circle.y and circle.y < rows[i].yf:
+#                 circle.row = i
+#             if columns[i].xi < circle.x and circle.x < columns[i].xf:
+#                 circle.column = i
+#     for circle in realCircles:
+#         board[circle.row][circle.column] = "O"
+#         print(board)
+
 def updateBoard():
+
+    #I'm going to sleep now, i have enough of this error even though i have done this 1000000 times wihtout problems and now something goes wrong :( 
+    #AttributeError: 'NoneType' object has no attribute 'append'
     for circle in realCircles:
-        for i in range(0, len(rows)):
-            if rows[i].yi < circle.y and circle.y < rows[i].yf:
-                circle.row = i
-            if columns[i].xi < circle.x and circle.x < columns[i].xf:
-                circle.column = i
-    for circle in realCircles:
-        board[circle.row][circle.column] = "O"
-        print(board)
+        distances = [[0,0],[0,0],[0,0],[0,0]] 
+        closePoints = 0
+        for point in centerPoints:
+            PointToCircle = distance((circle.x, circle.y), point)
+            if PointToCircle != None:
+                distances = distances.append(PointToCircle)
+                print(distances) 
+            print("""
+            
+
+
+
+
+
+
+
+            
+            """)
+            if PointToCircle < diagonal + 20:
+                closePoints += 1
+
+
+
 
 class Circle:
     def __init__(self, x, y, r):
@@ -298,7 +327,7 @@ def calibrate_playingfield(event, x, y, flags, params):
             centerPoints[counter][0] = x      
             centerPoints[counter][1] = y     
             counter += 1
-            diagonal = int(distance(centerPoints[0], centerPoints[2]))
+            diagonal = distance(centerPoints[0], centerPoints[2])
             print(diagonal)
 
         elif counter == 4:
@@ -404,8 +433,11 @@ while True:
                 if circle.number <= 19:
                     realCircles.remove(circle)
 
+            #have to change the entire updating system to implement the new circle detection mode using the center points
+            # this one uses presets with fixed values defined at the beginning of the file 
             updateBoard()
 
+            # i should be able to keep this the same as i'm comparing the old with the new board to see changes, as i need to see when the board has actually changed or the person has drawn a second invalid circle
             changed, row, column = checkBoard()
             oldboard = board
 
