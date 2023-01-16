@@ -131,6 +131,7 @@ def bestMove():
                     move = [i, j]
                 
     board[move[0]][move[1]] = ai.symbol
+    print(move[0], move[1])
 
 
 

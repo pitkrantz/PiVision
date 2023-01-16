@@ -1,4 +1,5 @@
 import cv2
+import os
 import numpy as np
 from time import sleep
 
@@ -12,6 +13,8 @@ class player:
 
 ai = player("X")
 human = player("O")
+
+interval = 30
 
 starting = True #If True bot starts else player starts however player always stays O
 
@@ -29,7 +32,7 @@ oldboard = [
     ["/", "/", "/"]     #row 2
 ]
 
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 sleep(3)
 
 class row:
@@ -94,7 +97,7 @@ def checkWinner():
     if board[2][0] == board[2][1] and board[2][1] == board[2][2] and board[2][2] == "O":
         return "O"
 
-    
+ 
     if board[0][0] == board[1][0] and board[1][0] == board[2][0] and board[2][0] == "X":
         return "X"
     if board[0][0] == board[1][0] and board[1][0] == board[2][0] and board[2][0] == "O":
@@ -140,6 +143,7 @@ def bestMove():
                     move = [i, j]
                 
     board[move[0]][move[1]] = ai.symbol
+    return (move[0], move[1])
 
 def minimax(playingboard, isMaximizing):
     result = checkWinner()
@@ -199,8 +203,11 @@ def updateBoard():
             if columns[i].xi < circle.x and circle.x < columns[i].xf:
                 circle.column = i
     for circle in realCircles:
-        board[circle.row][circle.column] = "O"
-        print(board)
+        if board[circle.row][circle.column] != "X":
+            board[circle.row][circle.column] = "O"
+        else:
+            print("can't draw here")
+    print(board)
 
 class Circle:
     def __init__(self, x, y, r):
@@ -301,6 +308,7 @@ while True:
     CirclesDuringFrame = []
 
     _, frame  = cap.read()
+    frame = cv2.rotate(frame, cv2.ROTATE_180)
  
     cv2.setMouseCallback("Frame", mousePoints)
 
@@ -335,7 +343,7 @@ while True:
 
     if counter == 4:
         caption(True)
-        circles = cv2.HoughCircles(blurFrame, cv2.HOUGH_GRADIENT, 1.2, 100, param1= 100, param2 = 45, minRadius = 20, maxRadius = 150)
+        circles = cv2.HoughCircles(blurFrame, cv2.HOUGH_GRADIENT, 1.2, 100, param1= 100, param2 = 45, minRadius = 60, maxRadius = 100)
 
         if circles is not None:
             detectedCircles += 1
@@ -352,12 +360,13 @@ while True:
             for i in circles[0, :]:
                 cv2.circle(frame, (i[0],i[1]), i[2], (0, 255, 0), 3)
         
-        if frames == 20:
+        
+        if frames == interval:
 
             realCircles = CheckCircles(CombinedCircles, 100)
             
             for circle in realCircles:
-                if circle.number <= 19:
+                if circle.number <= interval-1:
                     realCircles.remove(circle)
 
             updateBoard()
@@ -366,7 +375,8 @@ while True:
             oldboard = board
 
             if changed:
-                bestMove()
+                botrow, botcolumn = bestMove()
+                print(botrow, botcolumn)
                 print("Bot makes moves")
 
             numberofCircles = len(realCircles)
@@ -380,6 +390,8 @@ while True:
             frames = 0
             
         frames += 1
+
+        newline = cv2.line(frame, (100,100), (200,200), (0, 0, 255), 2)
 
     else:
         caption(False)
