@@ -248,6 +248,8 @@ def updateBoard():
                 board[2][2] = "O" 
             if PointA == 3:
                 board[2][0] = "O"   
+            
+            print("corner")
         # check edges        
         elif len(closePoints) == 2:
             PointA = centerPoints.index(closePoints[0])
@@ -265,9 +267,11 @@ def updateBoard():
             if (PointA == 0 and PointB == 3) or (PointA == 3 and PointB == 0):
                 board[1][0] = "O" 
 
+            print("edge")
         #check center
         elif len(closePoints) >= 3:
-            board[1][1] = "O" 
+            board[1][1] = "O"
+            print("center") 
         else:
             print("Error")
 
@@ -277,18 +281,7 @@ def updateBoard():
     #     for point in centerPoints:
     #         PointToCircle = distance((circle.x, circle.y), point)
     #         distances.append(PointToCircle)
-    #        # print("This is a distance" + str(distances[0]), str(distances[1]), str(distances[2]), str(distances[3])) 
-        print("""
-            
-
-
-
-
-
-
-
-            
-        """)
+    #        # print("This is a distance" + str(distances[0]), str(distances[1]), str(distances[2]), str(distances[3]))  
     #         if PointToCircle < diagonal + 20:
     #             closePoints += 1
 
@@ -489,6 +482,9 @@ while True:
             if changed:
                 bestMove()
                 print("Bot makes moves")
+
+                #here comes the code which makes the robot do its moves
+
 
             numberofCircles = len(realCircles)
 
