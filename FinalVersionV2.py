@@ -222,18 +222,63 @@ def checkBoard():
 #         print(board)
 
 def updateBoard():
-
     #I'm going to sleep now, i have enough of this error even though i have done this 1000000 times wihtout problems and now something goes wrong :( 
     #AttributeError: 'NoneType' object has no attribute 'append'
     for circle in realCircles:
-        distances = [[0,0],[0,0],[0,0],[0,0]] 
-        closePoints = 0
+        distances = []
+        closePoints = []
+        #numberOfClosePoints = 0
         for point in centerPoints:
             PointToCircle = distance((circle.x, circle.y), point)
-            if PointToCircle != None:
-                distances = distances.append(PointToCircle)
-                print(distances) 
-            print("""
+            #distances.append([PointToCircle,point])
+            if PointToCircle < (diagonal + 20):
+                #numberOfClosePoints += 1
+                closePoints.append(point)
+        print(closePoints)
+        #For this to work it is important that all the points are set TR, TL, BR, BL in this order
+        
+       #check corners
+        if len(closePoints) == 1:
+            PointA = centerPoints.index(closePoints[0])
+            if PointA == 0:
+                board[0][0] = "O"
+            if PointA == 1:
+                board[0][2] = "O"   
+            if PointA == 2:
+                board[2][2] = "O" 
+            if PointA == 3:
+                board[2][0] = "O"   
+        # check edges        
+        elif len(closePoints) == 2:
+            PointA = centerPoints.index(closePoints[0])
+            PointB = centerPoints.index(closePoints[1])
+
+            if (PointA == 0 and PointB == 1) or (PointA == 1 and PointB == 0):
+                board[0][1] = "O" 
+
+            if (PointA == 2 and PointB == 1) or (PointA == 1 and PointB == 2):
+                board[1][2] = "O" 
+
+            if (PointA == 2 and PointB == 3) or (PointA == 3 and PointB == 2):
+                board[2][1] = "O" 
+
+            if (PointA == 0 and PointB == 3) or (PointA == 3 and PointB == 0):
+                board[1][0] = "O" 
+
+        #check center
+        elif len(closePoints) >= 3:
+            board[1][1] = "O" 
+        else:
+            print("Error")
+
+    # for circle in realCircles:
+    #     distances = [] 
+    #     closePoints = 0
+    #     for point in centerPoints:
+    #         PointToCircle = distance((circle.x, circle.y), point)
+    #         distances.append(PointToCircle)
+    #        # print("This is a distance" + str(distances[0]), str(distances[1]), str(distances[2]), str(distances[3])) 
+        print("""
             
 
 
@@ -243,9 +288,9 @@ def updateBoard():
 
 
             
-            """)
-            if PointToCircle < diagonal + 20:
-                closePoints += 1
+        """)
+    #         if PointToCircle < diagonal + 20:
+    #             closePoints += 1
 
 
 
@@ -448,7 +493,7 @@ while True:
             numberofCircles = len(realCircles)
 
             try:
-                print(CombinedCircles[0].x, CombinedCircles[0].y, CombinedCircles[0].r)
+                print("Found circles" + CombinedCircles[0].x, CombinedCircles[0].y, CombinedCircles[0].r)
             except:
                 print("No circles")
             CombinedCircles = []

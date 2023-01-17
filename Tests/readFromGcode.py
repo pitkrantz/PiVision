@@ -25,10 +25,16 @@ def calibrate_playingfield(event, x, y, flags, params):
         else:
             counter = 0
 
+def test():
+    distances = []
+    for i in range(0,10):
+        distances.append([i, i+1])
+    print(distances)
 
-cv2.setMouseCallback("Frame", calibrate_playingfield)
+# cv2.setMouseCallback("Frame", calibrate_playingfield)
 
 
-def create_gcode(nextMove):
-    print(nextMove[1])
+# def create_gcode(nextMove):
+#     print(nextMove[1])
 
+test()
