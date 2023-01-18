@@ -1,12 +1,23 @@
 import os
 import serial
 from time import sleep
+from math import sqrt
+
 board = [
     # 0    1    2
     ["/", "/", "/"],    #row 0
     ["/", "/", "/"],    #row 1
     ["/", "/", "/"]     #row 2
 ]
+# array with center points of all squares in order to know how to draw everything
+boardcoords = [
+    [[0,0], [0,0], [0,0]],
+    [[0,0], [0,0], [0,0]],
+    [[0,0], [0,0], [0,0]]
+]
+
+diagonal = 420
+squareLength = diagonal/sqrt(2)
 # this approach uses a temporary gcode file, which might not be the best for your harddrive (SSD) 
 # so I might implement a version where you just save them in a long string or an array or something stored in memory
 #robotPort = "/dev/cu.usbserial-A10JYZY0"
@@ -68,10 +79,20 @@ class GcodeGenerator:
         file.close()
         self.Connection.executeFile() 
     
-    def cross():
+    def cross(centerPoint):
         print("Cross")
-    def generateGcode(square):
-        print("generating")
+        # this function draws a cross starting TL to BR -> BL to TR
+        half_squareLength = squareLength/2
+        file = open("Intructions.gcode", "w")
+        file.write("G0 X" + str(centerPoint[0] - half_squareLength)+ " Y" + str(centerPoint[1] + half_squareLength) + "\r\n")
+        file.write("M4") # set pen down
+        file.write("G1 X" + str(centerPoint[0] + (half_squareLength)) + " Y" + str(centerPoint[1] - half_squareLength) + "\r\n")
+        file.write("M3") # lift pen move to lower left corner 
+        file.write("G0 X" + str(centerPoint[0] - half_squareLength) + " Y" + str(centerPoint[1] - half_squareLength) + "\r\n")
+        file.write("M4")# set pen down
+        file.write("G1 X" + str(centerPoint[0]+ half_squareLength) + " Y" + str(centerPoint[1] + half_squareLength) + "\r\n")
+        file.write("M3") # lift pen up
+        file.write("G0 X0 Y0" + "\r\n")
     
     def drawPlayingField():
         print("Setting up...")
@@ -191,12 +212,7 @@ def minimax(playingboard, isMaximizing):
                         bestScore = score
         return bestScore
 
-# manager = GcodeGenerator
-
-# manager.calibrate()
-
 serialmanager = SerialManager()
-#serialmanager.executeFile()
 
 generator = GcodeGenerator()
 generator.calibrate()

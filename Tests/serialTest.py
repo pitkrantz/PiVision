@@ -1,5 +1,4 @@
 import serial
-import pygcode
 from time import sleep
 
 #printerPort = "/dev/tty.usbserial-1210"
