@@ -3,6 +3,10 @@ import serial
 from time import sleep
 from math import sqrt
 
+
+#!!!!!!! M4 S100 -> HIGH
+# M5 -> LOW
+
 board = [
     # 0    1    2
     ["/", "/", "/"],    #row 0
@@ -22,6 +26,7 @@ squareLength = diagonal/sqrt(2)
 # so I might implement a version where you just save them in a long string or an array or something stored in memory
 #robotPort = "/dev/cu.usbserial-A10JYZY0"
 robotPort = "/dev/tty.usbmodem212301"
+
 class SerialManager:
     def __init__(self):
         self.ser = serial.Serial(robotPort, 115200)
@@ -48,38 +53,60 @@ class SerialManager:
         instructions = currentFile.readlines()
         print("file is being read")
         print(len(instructions))
-        for line in instructions:
-            print("Hello")
-            print(line)
-            print(bytes(line, "utf-8"))
-            self.ser.write(bytes(line + "\r\n", "utf-8"))
+        #print(instructions)
+        #print(bytes(instructions[2], "utf-8"))
+        for i in range(0, (len(instructions))):
+            print(i)
+            print(bytes(instructions[i], "utf-8"))
+            self.ser.write(bytes(instructions[i], "utf-8"))
             output = self.ser.readline()
             if output == b"ok\r\n":
                 print("ok")
             else:
-                print("Something has gone wrong")
-                
-        
+                print(output)     
+            sleep(2) 
         # print("deleting file")
         # os.remove("Instructions.gcode")
-
+    
+    def closeSerial(self):
+        self.ser.close()
 
 class GcodeGenerator:
 
     def __init__(self):
         self.Connection = serialmanager
 
+    def lineTest(self):
+        file = open("Instructions.gcode", "w")
+        file.write("G0 X100 Y100\r\n") # move the pen of to the middle a bit
+        file.write("M4 S100\r\n")#pen down
+        file.write("G4 P1000\r\n")
+        file.write("G1 X20\r\n")
+        file.write("G1 Y20\r\n")
+        file.write("M5\r\n")
+        print("Testline File created")
+        file.close()
+
+    
+    def penDown(self):
+        print("Starting Pen Down")
+        file = open("Instructions.gcode", "w")
+        file.write("M4 S100\r\n")
+        file.write("M5\r\n")
+        print("File created")
+        file.close()
 
     def calibrate(self):
         print("calibrating...")
         file = open("Instructions.gcode", "w")
         file.write("G28 \r\n")
         file.write("G0 \r\n")
-        print("file created")
-        file.close()
-        self.Connection.executeFile() 
-    
-    def cross(centerPoint):
+        print("Calibration File created")
+        file.close() 
+
+    def cross(self, row, column):
+         
+        centerPoint = boardcoords[row][column] 
         print("Cross")
         # this function draws a cross starting TL to BR -> BL to TR
         half_squareLength = squareLength/2
@@ -92,7 +119,9 @@ class GcodeGenerator:
         file.write("M4")# set pen down
         file.write("G1 X" + str(centerPoint[0]+ half_squareLength) + " Y" + str(centerPoint[1] + half_squareLength) + "\r\n")
         file.write("M3") # lift pen up
-        file.write("G0 X0 Y0" + "\r\n")
+        file.write("G0 X0 Y0" + "\r\n") 
+        print("Cross file created")     
+        file.close()
     
     def drawPlayingField():
         print("Setting up...")
@@ -214,5 +243,12 @@ def minimax(playingboard, isMaximizing):
 
 serialmanager = SerialManager()
 
+os.remove("Instructions.gcode")
+
 generator = GcodeGenerator()
-generator.calibrate()
+generator.penDown()
+#generator.calibrate()
+#generator.lineTest()
+serialmanager.executeFile()
+sleep(1)
+serialmanager.closeSerial()
