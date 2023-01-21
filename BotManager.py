@@ -20,12 +20,22 @@ boardcoords = [
     [[0,0], [0,0], [0,0]]
 ]
 
+InstructionsArr = []
+
+
 diagonal = 420
 squareLength = diagonal/sqrt(2)
 # this approach uses a temporary gcode file, which might not be the best for your harddrive (SSD) 
 # so I might implement a version where you just save them in a long string or an array or something stored in memory
 #robotPort = "/dev/cu.usbserial-A10JYZY0"
 robotPort = "/dev/tty.usbmodem212301"
+
+# Idea --> use an object for the bot functions to keep everything sorted well 
+# class Bot:
+#     def __init__(self, symbol):
+#         self.symbol = symbol
+#     def minimax(self)
+
 
 class SerialManager:
     def __init__(self):
@@ -44,7 +54,20 @@ class SerialManager:
         # else:
         #     print("Error")
         #     return
+    
+    def executeArr(self, array):
 
+        #I think I will use this method in order to not put to much strain on the SSd by creating and deleting files + speed
+
+
+        print("executing")
+        for line in array:
+            self.ser.write(bytes(line, "utf-8"))
+            output = self.ser.readline()
+            print(output)
+            sleep(0.1)
+
+        InstructionsArr = []
 
 
         #!!!!! Always close a file before reading it somewhere else, because this saves the acutal data
@@ -64,7 +87,7 @@ class SerialManager:
                 print("ok")
             else:
                 print(output)     
-            sleep(2) 
+            sleep(0.2) 
         # print("deleting file")
         # os.remove("Instructions.gcode")
     
@@ -75,6 +98,10 @@ class GcodeGenerator:
 
     def __init__(self):
         self.Connection = serialmanager
+
+    def newModelTest(self):
+        InstructionsArr.append("G0 X100\r\n")
+        InstructionsArr.append("G0 X200\r\n")
 
     def lineTest(self):
         file = open("Instructions.gcode", "w")
@@ -92,6 +119,7 @@ class GcodeGenerator:
         print("Starting Pen Down")
         file = open("Instructions.gcode", "w")
         file.write("M4 S100\r\n")
+        file.write("G4 P1\r\n")
         file.write("M5\r\n")
         print("File created")
         file.close()
@@ -99,8 +127,8 @@ class GcodeGenerator:
     def calibrate(self):
         print("calibrating...")
         file = open("Instructions.gcode", "w")
-        file.write("G28 \r\n")
-        file.write("G0 \r\n")
+        file.write("G28\r\n")
+        file.write("G0\r\n")
         print("Calibration File created")
         file.close() 
 
@@ -243,12 +271,17 @@ def minimax(playingboard, isMaximizing):
 
 serialmanager = SerialManager()
 
-os.remove("Instructions.gcode")
+# os.remove("Instructions.gcode")
 
 generator = GcodeGenerator()
-generator.penDown()
-#generator.calibrate()
+#generator.penDown()
+
+# generator.calibrate()
 #generator.lineTest()
-serialmanager.executeFile()
+# serialmanager.executeFile()
+
+generator.newModelTest()
+serialmanager.executeArr(InstructionsArr)
+
 sleep(1)
 serialmanager.closeSerial()
