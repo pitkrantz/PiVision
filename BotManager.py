@@ -116,13 +116,11 @@ class GcodeGenerator:
 
     
     def penDown(self):
-        print("Starting Pen Down")
-        file = open("Instructions.gcode", "w")
-        file.write("M4 S100\r\n")
-        file.write("G4 P1\r\n")
-        file.write("M5\r\n")
-        print("File created")
-        file.close()
+        #print("Starting Pen Down")
+        #file = open("Instructions.gcode", "w")
+        InstructionsArr.append("M4 S100\r\n")
+        InstructionsArr.append("G4 P1\r\n")
+        InstructionsArr.append("M5\r\n")
 
     def calibrate(self):
         print("calibrating...")
@@ -132,24 +130,20 @@ class GcodeGenerator:
         print("Calibration File created")
         file.close() 
 
-    def cross(self, row, column):
+    def cross(self, centerPoint):
          
-        centerPoint = boardcoords[row][column] 
         print("Cross")
         # this function draws a cross starting TL to BR -> BL to TR
         half_squareLength = squareLength/2
-        file = open("Intructions.gcode", "w")
-        file.write("G0 X" + str(centerPoint[0] - half_squareLength)+ " Y" + str(centerPoint[1] + half_squareLength) + "\r\n")
-        file.write("M4") # set pen down
-        file.write("G1 X" + str(centerPoint[0] + (half_squareLength)) + " Y" + str(centerPoint[1] - half_squareLength) + "\r\n")
-        file.write("M3") # lift pen move to lower left corner 
-        file.write("G0 X" + str(centerPoint[0] - half_squareLength) + " Y" + str(centerPoint[1] - half_squareLength) + "\r\n")
-        file.write("M4")# set pen down
-        file.write("G1 X" + str(centerPoint[0]+ half_squareLength) + " Y" + str(centerPoint[1] + half_squareLength) + "\r\n")
-        file.write("M3") # lift pen up
-        file.write("G0 X0 Y0" + "\r\n") 
-        print("Cross file created")     
-        file.close()
+        InstructionsArr.append("G0 X" + str(centerPoint[0] - half_squareLength)+ " Y" + str(centerPoint[1] + half_squareLength) + "\r\n")
+        InstructionsArr.append("M4 S100\r\n") # set pen down
+        InstructionsArr.append("G1 X" + str(centerPoint[0] + (half_squareLength)) + " Y" + str(centerPoint[1] - half_squareLength) + "\r\n")
+        InstructionsArr.append("M5\r\n") # lift pen move to lower left corner 
+        InstructionsArr.append("G0 X" + str(centerPoint[0] - half_squareLength) + " Y" + str(centerPoint[1] - half_squareLength) + "\r\n")
+        InstructionsArr.append("M4 S100\r\n")# set pen down
+        InstructionsArr.append("G1 X" + str(centerPoint[0]+ half_squareLength) + " Y" + str(centerPoint[1] + half_squareLength) + "\r\n")
+        InstructionsArr.append("M5\r\n") # lift pen up
+        InstructionsArr.append("G0 X0 Y0" + "\r\n") 
     
     def drawPlayingField():
         print("Setting up...")
@@ -205,7 +199,6 @@ def checkWinner():
     if board[0][2] == board[1][2] and board[1][2] == board[2][2] and board[2][2] == "O":
         return "O"
 
-
     if board[0][0] == board[1][1] and board[1][1] == board[2][2] and board[2][2] == "X":
         return "X"
     if board[0][0] == board[1][1] and board[1][1] == board[2][2] and board[2][2] == "O":
@@ -233,6 +226,7 @@ def bestMove():
                     move = [i, j]
                 
     board[move[0]][move[1]] = ai.symbol
+    return move
 def minimax(playingboard, isMaximizing):
 
     result = checkWinner()
@@ -270,18 +264,19 @@ def minimax(playingboard, isMaximizing):
         return bestScore
 
 serialmanager = SerialManager()
-
-# os.remove("Instructions.gcode")
-
 generator = GcodeGenerator()
-#generator.penDown()
 
+#generator.penDown()
 # generator.calibrate()
 #generator.lineTest()
 # serialmanager.executeFile()
 
 generator.newModelTest()
 serialmanager.executeArr(InstructionsArr)
-
 sleep(1)
+
+centerpoint = bestMove()
+print(centerpoint)
+
+
 serialmanager.closeSerial()
