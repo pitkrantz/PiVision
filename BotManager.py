@@ -105,12 +105,12 @@ class GcodeGenerator:
 
     def lineTest(self):
         file = open("Instructions.gcode", "w")
-        file.write("G0 X100 Y100\r\n") # move the pen of to the middle a bit
-        file.write("M4 S100\r\n")#pen down
-        file.write("G4 P1000\r\n")
-        file.write("G1 X20\r\n")
-        file.write("G1 Y20\r\n")
-        file.write("M5\r\n")
+        InstructionsArr.append("G0 X100 Y100\r\n") # move the pen of to the middle a bit
+        InstructionsArr.append("M4 S100\r\n")#pen down
+        InstructionsArr.append("G4 P1000\r\n")
+        InstructionsArr.append("G1 X20\r\n")
+        InstructionsArr.append("G1 Y20\r\n")
+        InstructionsArr.append("M5\r\n")
         print("Testline File created")
         file.close()
 
@@ -125,8 +125,8 @@ class GcodeGenerator:
     def calibrate(self):
         print("calibrating...")
         file = open("Instructions.gcode", "w")
-        file.write("G28\r\n")
-        file.write("G0\r\n")
+        InstructionsArr.append("G28\r\n")
+        InstructionsArr.append("G0\r\n")
         print("Calibration File created")
         file.close() 
 
