@@ -409,7 +409,7 @@ while True:
  
     cv2.setMouseCallback("Frame", calibrate_playingfield)
 
-    blank = np.zeros(frame.shape[:2], dtype="uint8")
+#    blank = np.zeros(frame.shape[:2], dtype="uint8")
    # polymask = cv2.fillPoly(blank, [points], 255)
 
    # masked = cv2.bitwise_and(frame, frame, mask=polymask)
@@ -429,15 +429,15 @@ while True:
     # Mask preview
     # cv2.imshow("Masked", masked)
 
-    shadow = 40
-    light = 100
+#    shadow = 40
+#    light = 100
 
     # Methode 1°: MASK mat luucht, ganz ofhängeg vun der belichtung
 
-    lowerLimit = (shadow, shadow, shadow)
-    upperLimit = (light, light, light)
+#    lowerLimit = (shadow, shadow, shadow)
+#    upperLimit = (light, light, light)
    # mask = cv2.inRange(masked, lowerLimit, upperLimit)
-    mask = cv2.inRange(frame, lowerLimit, upperLimit)
+#    mask = cv2.inRange(frame, lowerLimit, upperLimit)
     # Methode 2°: Bessen besser mengen ech wei Methode 1°   !!!!AKTIV!!!!
 
    # grayFrame = cv2.cvtColor(masked, cv2.COLOR_BGR2GRAY)
@@ -502,9 +502,8 @@ while True:
         caption(False)
 
     #boardview = cv2.putText(frame, str(board),(100, 200),cv2.FONT_HERSHEY_SIMPLEX, 2, (0,0,0), 2, cv2.LINE_AA)
-    numberofCirclesView = cv2.putText(frame, "Number of Circles: " + str(numberofCircles),(100, 250),cv2.FONT_HERSHEY_SIMPLEX, 2, (0,0,0), 2, cv2.LINE_AA)
-
-    cv2.imshow("Mask", mask)
+    numberofCirclesView = cv2.putText(frame, "Number of Circles: " + str(numberofCircles),(100, 100),cv2.FONT_HERSHEY_SIMPLEX, 2, (0,0,0), 2, cv2.LINE_AA)
+#    cv2.imshow("Mask", mask)
     cv2.imshow("Frame", frame)
 
     key = cv2.waitKey(1)
