@@ -9,19 +9,26 @@ print("Starting...")
 
 # modes = ["menu", "calibrate", "offset", "play"]
 class modes():
-    menu = "Menu"
-    calibrate = "Calibrate"
-    offset = "Offset"
-    play = "Play"
+    menu = 0
+    calibrate = 1 
+    offset = 2
+    play = 3 
 
 modes = modes()
 
-currentMode = modes.menu
+currentMode = modes.calibrate
 
 counter = 0
 
+
+
+
 def drawMenu():
     cv2.putText(frame, "MENU", (300, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+
+def drawCalibrate():
+    cv2.putText(frame, "CALIBRATE", (300, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+
 
 class player:
     def __init__(self, symbol):
@@ -392,8 +399,13 @@ while True:
     grayFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     blurFrame = cv2.GaussianBlur(grayFrame, (13, 13), 0)
 
-    drawMenu()
+    #draw interface
 
+    if currentMode == modes.menu:
+        drawMenu()
+    elif currentMode == modes.calibrate:
+        drawCalibrate()
+    
     if show:
         caption(True)
         circles = cv2.HoughCircles(blurFrame, cv2.HOUGH_GRADIENT, 1.2, 100, param1= 100, param2 = 45, minRadius = 20, maxRadius = 150)
@@ -412,7 +424,6 @@ while True:
 
             for i in circles[0, :]:
                 cv2.circle(frame, (i[0],i[1]), i[2], (0, 255, 0), 3)
-
 
 
         if frames == 20:
@@ -461,8 +472,9 @@ while True:
     
     if currentMode != modes.menu:
         if key == 27:
-            currentMode = modes.menu
+            currentMode = modes.menu  
 
+    if currentMode == modes.menu:
         if key == 49:
             currentMode = modes.calibrate
         
@@ -472,9 +484,9 @@ while True:
         if key == 32:
             currentMode = modes.play
 
-    if currentMode == modes.menu:
         if key == 27:
             break
+
 
     if currentMode == modes.offset:
         cv2.setMouseCallback("Frame", calibrate_playingfield) 
@@ -482,8 +494,6 @@ while True:
     if currentMode == modes.play:
         if key == 32:
             show = not show
-
-
 
 cap.release()
 cv2.destroyAllWindows()
