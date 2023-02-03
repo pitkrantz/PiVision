@@ -35,7 +35,6 @@ def CheckCircles(inputCircles, threshhold = 40):
                         inputCircles[i].number += 1
                         Copies.append(j+1)
 
-
     Copies.reverse()
     for i in Copies:
         inputCircles.pop(i)
