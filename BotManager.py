@@ -96,9 +96,6 @@ class SerialManager:
 
 class GcodeGenerator:
 
-    def __init__(self):
-        self.Connection = serialmanager
-
     def newModelTest(self):
         InstructionsArr.append("G0 X100\r\n")
         InstructionsArr.append("G0 X200\r\n")
@@ -114,7 +111,6 @@ class GcodeGenerator:
         print("Testline File created")
         file.close()
 
-    
     def penDown(self):
         #print("Starting Pen Down")
         #file = open("Instructions.gcode", "w")
@@ -263,7 +259,13 @@ def minimax(playingboard, isMaximizing):
                         bestScore = score
         return bestScore
 
-serialmanager = SerialManager()
+connected = False
+
+try:
+    serialmanager = SerialManager()
+    connected = True
+except:
+    print("Error with serial connection")
 generator = GcodeGenerator()
 
 #generator.penDown()
@@ -272,11 +274,13 @@ generator = GcodeGenerator()
 # serialmanager.executeFile()
 
 generator.newModelTest()
-serialmanager.executeArr(InstructionsArr)
-sleep(1)
+
+if connected:
+    serialmanager.executeArr(InstructionsArr)
+    sleep(1)
 
 centerpoint = bestMove()
 print(centerpoint)
 
-
-serialmanager.closeSerial()
+if connected:
+    serialmanager.closeSerial()

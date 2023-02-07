@@ -2,33 +2,57 @@ import cv2
 import numpy as np
 from time import sleep
 from math import sqrt
+import BotManager
 
 print("Starting...")
 
-
+cap = cv2.VideoCapture(0)
+sleep(2.5)
 
 # modes = ["menu", "calibrate", "offset", "play"]
 class modes():
     menu = 0
     calibrate = 1 
     offset = 2
-    play = 3 
+    play = 3
+    inProgress = 4
+    cancel = 5
 
 modes = modes()
 
-currentMode = modes.calibrate
+currentMode = modes.menu
+
+gameStarted = False
 
 counter = 0
 
-
-
-
 def drawMenu():
-    cv2.putText(frame, "MENU", (300, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.putText(frame, "MENU", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.putText(frame, "1. Calibrate", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2, cv2.LINE_AA) 
+    cv2.putText(frame, "2. Offset", (50, 110), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.putText(frame, "3. Playing", (50, 140), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.putText(frame, "ESC Quit", (50, 170), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
 
 def drawCalibrate():
-    cv2.putText(frame, "CALIBRATE", (300, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.putText(frame, "CALIBRATE", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.putText(frame, "Press Enter to calibrate", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
 
+def drawOffset():
+    cv2.putText(frame, "OFFSET", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.putText(frame, "xoffset: " + str(xOffset), (300, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.putText(frame, "yoffset: " + str(yOffset), (300, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.rectangle(frame, (xOffset-2, yOffset-2), (xOffset + 2, yOffset + 2), (255, 0, 255), -1)
+
+def drawPlay():
+    cv2.putText(frame, "PLAY", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA) 
+    cv2.putText(frame, "P. Player starts", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA) 
+    cv2.putText(frame, "C. Computer starts", (50, 110), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA) 
+
+def drawInProgress():
+    cv2.putText(frame, "PLAYING", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA) 
+
+def drawCancel():
+    cv2.putText(frame, "Do you really want to cancel (y/n)", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA) 
 
 class player:
     def __init__(self, symbol):
@@ -43,7 +67,7 @@ diagonal = 420
 
 show = False
 
-starting = True #If True bot starts else player starts however player always stays O
+starting = True     #If True bot starts else player starts however player always stays O
 
 board = [
     # 0    1    2
@@ -59,8 +83,13 @@ oldboard = [
     ["/", "/", "/"]     #row 2
 ]
 
-cap = cv2.VideoCapture(0)
-sleep(3)
+xOffset = 0
+yOffset = 0
+
+xRobot = 100
+yRobot = 100
+
+constant = 1
 
 class row:
     def __init__(self, id, yi, yf):
@@ -79,28 +108,12 @@ class column:
 # A = (810, 390) B = (1110, 390) C = (810, 690) D = (810, 690)
 centerPoints = [[810,390], [1110, 390], [1110, 690], [810, 690]]
 
-columns = []
-x0 = 100
-x1 = 580
-x2 = 1160
-x3 = 1740
-
-xboard = [x0,x1,x2,x3]
-
-rows = []
-y0 = 100
-y1 = 300
-y2 = 600
-y3 = 900
-
-yboard = [y0,y1,y2,y3]
-
-for i in range(0,3):
-    newcolumn = column(i, xboard[i], xboard[i+1])
-    columns.append(newcolumn)
-
-    newrow = row(i, yboard[i], yboard[i+1])
-    rows.append(newrow)
+def offsetPoint(event, x, y, flags, params):
+    global xOffset
+    global yOffset 
+    if event == cv2.EVENT_LBUTTONDOWN:
+        xOffset = x
+        yOffset = y
 
 def checkDraw():
     freespaces = 0
@@ -188,7 +201,6 @@ def minimax(playingboard, isMaximizing):
         if result == 0:
             return 0
 
-    
     if (isMaximizing):
         bestScore = -800
         for i in range(0,3):
@@ -339,34 +351,30 @@ def CheckCircles(inputCircles, threshhold = 40):
     
     return inputCircles
 
-def calibrate_playingfield(event, x, y, flags, params):
-    global counter
-    global diagonal
-    if event == cv2.EVENT_LBUTTONDOWN: 
-        if counter < 4:                            
-            centerPoints[counter][0] = x      
-            centerPoints[counter][1] = y     
-            counter += 1
-            diagonal = distance(centerPoints[0], centerPoints[2])
-            print(diagonal)
+# def calibrate_playingfield(event, x, y, flags, params):
+#     global counter
+#     global diagonal
+#     if event == cv2.EVENT_LBUTTONDOWN: 
+#         if counter < 4:                            
+#             centerPoints[counter][0] = x      
+#             centerPoints[counter][1] = y     
+#             counter += 1
+#             diagonal = distance(centerPoints[0], centerPoints[2])
+#             print(diagonal)
 
-        elif counter == 4:
-            for point in centerPoints:
-                point[0] = -10 
-                point[1] = -10 
-            counter = 0
-        else:
-            counter = 0
+#         elif counter == 4:
+#             for point in centerPoints:
+#                 point[0] = -10 
+#                 point[1] = -10 
+#             counter = 0
+#         else:
+#             counter = 0
 
-def text(text, position):
-    cv2.putText(frame, str(text),position,cv2.FONT_HERSHEY_SIMPLEX, 5, (0,0,0), 5, cv2.LINE_AA)
-
-def caption(active):
-
-    if active:
-        cv2.putText(frame, "ACTIVE", (100, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-    else:
-        cv2.putText(frame, "INACTIVE", (100, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
+# def caption(active):
+#     if active:
+#         cv2.putText(frame, "ACTIVE", (100, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+#     else:
+#         cv2.putText(frame, "INACTIVE", (100, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
 
 #1920x1080 fir emmer 100 vum rand fort ze sinn
 #net mei benotzt well keng mask mei fir ze kucken
@@ -380,36 +388,38 @@ numberofCircles = 0
 CombinedCircles = []
 realCirlces = []
 
-
-if starting:
-    bestMove()
+# if starting:
+#     bestMove()
 
 while True:
     CirclesDuringFrame = []
 
     _, frame  = cap.read()
  
-    #cv2.setMouseCallback("Frame", calibrate_playingfield)
-
-
     # draw calibration rectangles to find center
-    for point in centerPoints:
-        rectangle = cv2.rectangle(frame, ((int(point[0] - 5)), int(point[1] - 5)), (int(point[0] + 5), int(point[1] + 5)), (0, 255, 0), -1)
-
+    # for point in centerPoints:
+    #     rectangle = cv2.rectangle(frame, ((int(point[0] - 5)), int(point[1] - 5)), (int(point[0] + 5), int(point[1] + 5)), (0, 255, 0), -1)
     grayFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     blurFrame = cv2.GaussianBlur(grayFrame, (13, 13), 0)
 
     #draw interface
-
     if currentMode == modes.menu:
         drawMenu()
-    elif currentMode == modes.calibrate:
+    if currentMode == modes.calibrate:
         drawCalibrate()
+    if currentMode == modes.offset:
+        drawOffset()
+    if currentMode == modes.play:
+        drawPlay()
+    if currentMode == modes.inProgress:
+        drawInProgress()
+        if starting:
+            bestMove()
+    if currentMode == modes.cancel:
+        drawCancel()
     
     if show:
-        caption(True)
         circles = cv2.HoughCircles(blurFrame, cv2.HOUGH_GRADIENT, 1.2, 100, param1= 100, param2 = 45, minRadius = 20, maxRadius = 150)
-
         if circles is not None:
             detectedCircles += 1
             circles = np.uint16(np.around(circles))
@@ -424,7 +434,6 @@ while True:
 
             for i in circles[0, :]:
                 cv2.circle(frame, (i[0],i[1]), i[2], (0, 255, 0), 3)
-
 
         if frames == 20:
 
@@ -460,19 +469,10 @@ while True:
             
         frames += 1
 
-    else:
-        caption(False)
-
-    #boardview = cv2.putText(frame, str(board),(100, 200),cv2.FONT_HERSHEY_SIMPLEX, 2, (0,0,0), 2, cv2.LINE_AA)
-    numberofCirclesView = cv2.putText(frame, "Number of Circles: " + str(numberofCircles),(100, 100),cv2.FONT_HERSHEY_SIMPLEX, 2, (0,0,0), 2, cv2.LINE_AA)
-#    cv2.imshow("Mask", mask)
+    numberofCirclesView = cv2.putText(frame, "Number of Circles: " + str(numberofCircles),(1500, 50),cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 1, cv2.LINE_AA)
     cv2.imshow("Frame", frame)
 
     key = cv2.waitKey(1)
-    
-    if currentMode != modes.menu:
-        if key == 27:
-            currentMode = modes.menu  
 
     if currentMode == modes.menu:
         if key == 49:
@@ -481,19 +481,52 @@ while True:
         if key == 50:
             currentMode = modes.offset
         
-        if key == 32:
+        if key == 51:
             currentMode = modes.play
 
         if key == 27:
             break
 
-
     if currentMode == modes.offset:
-        cv2.setMouseCallback("Frame", calibrate_playingfield) 
+        cv2.setMouseCallback("Frame", offsetPoint)
+
+        if key == 27:
+            currentMode = modes.menu
+
+    if currentMode == modes.calibrate:
+        if key == 13:
+            print("Calibration starting")
+        
+        if key == 27:
+            currentMode = modes.menu
 
     if currentMode == modes.play:
-        if key == 32:
-            show = not show
+        if gameStarted == False:
+            #bot starts
+            if key == 67 or key == 99:
+                starting = True
+                currentMode = modes.inProgress
+            # player starts
+            if key == 80 or key == 112:
+                starting = False
+                currentMode = modes.inProgress
 
+    if currentMode == modes.inProgress:
+        if key == 27:
+            currentMode = modes.cancel
+        if key == 32:
+            show = not show 
+        
+    if currentMode == modes.cancel:
+        if key == 89 or key == 121:
+            currentMode = modes.menu
+            board = [
+                        # 0    1    2
+                        ["/", "/", "/"],    #row 0
+                        ["/", "/", "/"],    #row 1
+                        ["/", "/", "/"]     #row 2
+                    ]
+        if key == 78 or key == 110:
+            currentMode = modes.inProgress
 cap.release()
 cv2.destroyAllWindows()
