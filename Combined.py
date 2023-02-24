@@ -6,8 +6,37 @@ import BotManager
 
 print("Starting...")
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 sleep(2.5)
+
+connected = False
+
+try:
+    configFile = open("config.txt", "r")
+    offsets = configFile.readlines()
+
+    # offset[0] -> xOffset
+    # offset[1] -> yOffset
+    xOffset = int(offsets[0])
+    yOffset = int(offsets[1])
+
+    # print(offsets[0].strip())
+    # print(offsets[1].strip())
+
+except:
+    print("Error with config file")
+    xOffset = 0
+    yOffset = 0
+
+generator = BotManager.GcodeGenerator
+
+try:
+    serial = BotManager.serialmanager
+    connected = True
+
+except:
+    print("Serial error")
+    connected = False
 
 # modes = ["menu", "calibrate", "offset", "play"]
 class modes():
@@ -39,8 +68,10 @@ def drawCalibrate():
 
 def drawOffset():
     cv2.putText(frame, "OFFSET", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-    cv2.putText(frame, "xoffset: " + str(xOffset), (300, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-    cv2.putText(frame, "yoffset: " + str(yOffset), (300, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.putText(frame, "Press Enter to draw calibration", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.putText(frame, "Press Space to check", (50, 110), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.putText(frame, "xoffset: " + str(xOffset), (900, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.putText(frame, "yoffset: " + str(yOffset), (900, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
     cv2.rectangle(frame, (xOffset-2, yOffset-2), (xOffset + 2, yOffset + 2), (255, 0, 255), -1)
 
 def drawPlay():
@@ -83,8 +114,8 @@ oldboard = [
     ["/", "/", "/"]     #row 2
 ]
 
-xOffset = 0
-yOffset = 0
+# xOffset = 0
+# yOffset = 0
 
 xRobot = 100
 yRobot = 100
@@ -114,6 +145,8 @@ def offsetPoint(event, x, y, flags, params):
     if event == cv2.EVENT_LBUTTONDOWN:
         xOffset = x
         yOffset = y
+        configFile = open("config.txt", "w")
+        configFile.write(str(xOffset) + "\n" + str(yOffset))
 
 def checkDraw():
     freespaces = 0
@@ -411,63 +444,61 @@ while True:
         drawOffset()
     if currentMode == modes.play:
         drawPlay()
-    if currentMode == modes.inProgress:
-        drawInProgress()
-        if starting:
-            bestMove()
     if currentMode == modes.cancel:
         drawCancel()
-    
-    if show:
-        circles = cv2.HoughCircles(blurFrame, cv2.HOUGH_GRADIENT, 1.2, 100, param1= 100, param2 = 45, minRadius = 20, maxRadius = 150)
-        if circles is not None:
-            detectedCircles += 1
-            circles = np.uint16(np.around(circles))
+    if currentMode == modes.inProgress:
+        drawInProgress()
+     
+        if show:
+           circles = cv2.HoughCircles(blurFrame, cv2.HOUGH_GRADIENT, 1.2, 100, param1= 100, param2 = 45, minRadius = 20, maxRadius = 150)
+           if circles is not None:
+               detectedCircles += 1
+               circles = np.uint16(np.around(circles))
 
-            for circle in circles[0, :]:
-                newcircle = Circle(circle[0], circle[1], circle[2])
-                CirclesDuringFrame.append(newcircle)
-                CirclesDuringFrame = deleteCopies(CirclesDuringFrame)
+               for circle in circles[0, :]:
+                   newcircle = Circle(circle[0], circle[1], circle[2])
+                   CirclesDuringFrame.append(newcircle)
+                   CirclesDuringFrame = deleteCopies(CirclesDuringFrame)
 
-                for circle in CirclesDuringFrame:
-                    CombinedCircles.append(circle)
+                   for circle in CirclesDuringFrame:
+                       CombinedCircles.append(circle)
 
-            for i in circles[0, :]:
-                cv2.circle(frame, (i[0],i[1]), i[2], (0, 255, 0), 3)
+               for i in circles[0, :]:
+                   cv2.circle(frame, (i[0],i[1]), i[2], (0, 255, 0), 3)
 
-        if frames == 20:
+           if frames == 20:
 
-            realCircles = CheckCircles(CombinedCircles, 100)
-            
-            for circle in realCircles:
-                if circle.number <= 19:
-                    realCircles.remove(circle)
+               realCircles = CheckCircles(CombinedCircles, 100)
+               
+               for circle in realCircles:
+                   if circle.number <= 19:
+                       realCircles.remove(circle)
 
-            #have to change the entire updating system to implement the new circle detection mode using the center points
-            # this one uses presets with fixed values defined at the beginning of the file 
-            updateBoard()
+               #have to change the entire updating system to implement the new circle detection mode using the center points
+               # this one uses presets with fixed values defined at the beginning of the file 
+               updateBoard()
 
-            # i should be able to keep this the same as i'm comparing the old with the new board to see changes, as i need to see when the board has actually changed or the person has drawn a second invalid circle
-            changed, row, column = checkBoard()
-            oldboard = board
+               # i should be able to keep this the same as i'm comparing the old with the new board to see changes, as i need to see when the board has actually changed or the person has drawn a second invalid circle
+               changed, row, column = checkBoard()
+               oldboard = board
 
-            if changed:
-                bestMove()
-                print("Bot makes moves")
+               if changed:
+                   bestMove()
+                   print("Bot makes moves")
 
-                #here comes the code which makes the robot do its moves
+                   #here comes the code which makes the robot do its moves
 
-            numberofCircles = len(realCircles)
+               numberofCircles = len(realCircles)
 
-            try:
-                print("Found circles" + CombinedCircles[0].x, CombinedCircles[0].y, CombinedCircles[0].r)
-            except:
-                print("No circles")
-            CombinedCircles = []
-            realCircles = []
-            frames = 0
-            
-        frames += 1
+               try:
+                   print("Found circles" + CombinedCircles[0].x, CombinedCircles[0].y, CombinedCircles[0].r)
+               except:
+                   print("No circles")
+               CombinedCircles = []
+               realCircles = []
+               frames = 0
+               
+           frames += 1
 
     numberofCirclesView = cv2.putText(frame, "Number of Circles: " + str(numberofCircles),(1500, 50),cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 1, cv2.LINE_AA)
     cv2.imshow("Frame", frame)
@@ -493,9 +524,27 @@ while True:
         if key == 27:
             currentMode = modes.menu
 
+        if key == 13:
+            if connected:
+                generator.offsetCalibration()
+                serial.executeArr()
+            else:
+                print("Not Connected")
+        if key == 32:
+            if connected:
+                generator.drawPoint(xOffset, yOffset)
+                serial.executeArr()
+            else:
+                print("Not Connected")
+
     if currentMode == modes.calibrate:
         if key == 13:
-            print("Calibration starting")
+            if connected:
+                print("Calibration starting")
+                generator.calibrate()
+                serial.executeArr() 
+            else:
+                print("Not Connected")
         
         if key == 27:
             currentMode = modes.menu
@@ -528,5 +577,6 @@ while True:
                     ]
         if key == 78 or key == 110:
             currentMode = modes.inProgress
+
 cap.release()
 cv2.destroyAllWindows()

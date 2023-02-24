@@ -55,10 +55,9 @@ class SerialManager:
         #     print("Error")
         #     return
     
-    def executeArr(self, array):
+    def executeArr(self, array = InstructionsArr):
 
         #I think I will use this method in order to not put to much strain on the SSd by creating and deleting files + speed
-
 
         print("executing")
         for line in array:
@@ -74,6 +73,7 @@ class SerialManager:
     def executeFile(self):
         currentFile = open("Instructions.gcode", "r")
         instructions = currentFile.readlines()
+
         print("file is being read")
         print(len(instructions))
         #print(instructions)
@@ -96,10 +96,6 @@ class SerialManager:
 
 class GcodeGenerator:
 
-    def newModelTest(self):
-        InstructionsArr.append("G0 X100\r\n")
-        InstructionsArr.append("G0 X200\r\n")
-
     def lineTest(self):
         file = open("Instructions.gcode", "w")
         InstructionsArr.append("G0 X100 Y100\r\n") # move the pen of to the middle a bit
@@ -116,18 +112,29 @@ class GcodeGenerator:
         #file = open("Instructions.gcode", "w")
         InstructionsArr.append("M4 S100\r\n")
         InstructionsArr.append("G4 P1\r\n")
+        # InstructionsArr.append("M5\r\n")
+    def penUp(self):
         InstructionsArr.append("M5\r\n")
+        InstructionsArr.append("G4 P1\r\n")
 
     def calibrate(self):
         print("calibrating...")
-        file = open("Instructions.gcode", "w")
+        # file = open("Instructions.gcode", "w")
         InstructionsArr.append("G28\r\n")
-        InstructionsArr.append("G0\r\n")
-        print("Calibration File created")
-        file.close() 
+        # InstructionsArr.append("G0\r\n")
+        # print("Calibration File created")
+        # file.close() 
 
-    def cross(self, centerPoint):
-         
+    def drawPoint(self, x, y):
+        InstructionsArr.append("G0 X" + str(x) + " Y" + str(y) +"\r\n")
+        self.penDown()
+        self.penUp()
+
+    def offsetCalibration(self):
+        print("Offset, calibrating")
+        self.drawPoint(10, 10)
+
+    def cross(self, centerPoint): 
         print("Cross")
         # this function draws a cross starting TL to BR -> BL to TR
         half_squareLength = squareLength/2
@@ -143,7 +150,6 @@ class GcodeGenerator:
     
     def drawPlayingField():
         print("Setting up...")
-
 
 class player:
     def __init__(self, symbol):
@@ -258,29 +264,3 @@ def minimax(playingboard, isMaximizing):
                     if (score < bestScore):
                         bestScore = score
         return bestScore
-
-connected = False
-
-try:
-    serialmanager = SerialManager()
-    connected = True
-except:
-    print("Error with serial connection")
-generator = GcodeGenerator()
-
-#generator.penDown()
-# generator.calibrate()
-#generator.lineTest()
-# serialmanager.executeFile()
-
-generator.newModelTest()
-
-if connected:
-    serialmanager.executeArr(InstructionsArr)
-    sleep(1)
-
-centerpoint = bestMove()
-print(centerpoint)
-
-if connected:
-    serialmanager.closeSerial()
