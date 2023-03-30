@@ -1,9 +1,8 @@
-import os
 import serial
 from time import sleep
 from math import sqrt
 
-
+#really M4S(degree) but 90 is 180 haven't changed that yet
 #!!!!!!! M4 S100 -> HIGH
 # M5 -> LOW
 
@@ -22,29 +21,45 @@ boardcoords = [
 
 InstructionsArr = []
 
-
 diagonal = 420
 squareLength = diagonal/sqrt(2)
 # this approach uses a temporary gcode file, which might not be the best for your harddrive (SSD) 
-# so I might implement a version where you just save them in a long string or an array or something stored in memory
-#robotPort = "/dev/cu.usbserial-A10JYZY0"
-robotPort = "/dev/tty.usbmodem212301"
+# so I might implement a version where you just save them in a long string or an array or something stored in memory -> done is used right now
+#  robotPort = "/dev/cu.usbserial-A10JYZY0" i don't know when this port was used but I'm keeping it here so I have it stored 
+# robotPort = "/dev/tty.usbmodem212301"
+# robotPort = "/dev/tty.usbmodem212101"
+# robotPort = "/dev/tty.usbmodem112301"
+ports = ["/dev/tty.usbmodem212101", "/dev/tty.usbmodem112301", "/dev/tty.usbmodem212301"]
+# robotPort = "/dev/tty.usbmodem212301"
 
+def getPort():
+    for port in ports:
+        try:
+             # print("Checking port " + port)
+             connectedPort = serial.Serial(port, 115200)
+             return connectedPort
+        except Exception as e:
+             print(e)
+             pass
+    
+    print("Serial Error")
+        
 # Idea --> use an object for the bot functions to keep everything sorted well 
 # class Bot:
 #     def __init__(self, symbol):
 #         self.symbol = symbol
 #     def minimax(self)
 
-
 class SerialManager:
     def __init__(self):
-        self.ser = serial.Serial(robotPort, 115200)
-        sleep(3)
+        # self.ser = serial.Serial(robotPort, 115200)
+        self.ser = getPort()
+        sleep(1)
+        
         response = self.ser.readline()
         if response == b"\r\n":
             response = self.ser.readline()
-        #print(response)
+        print(response)
         print("Connected")
         # self.ser.write(b'G28 \r\n')
         # output = self.ser.readline()
@@ -55,39 +70,39 @@ class SerialManager:
         #     print("Error")
         #     return
     
-    def executeArr(self, array = InstructionsArr):
-
+    def executeArr(self):
+        global InstructionsArr
         #I think I will use this method in order to not put to much strain on the SSd by creating and deleting files + speed
-
+        array = InstructionsArr
         print("executing")
         for line in array:
             self.ser.write(bytes(line, "utf-8"))
             output = self.ser.readline()
             print(output)
-            sleep(0.1)
-
+            # sleep(0.1)
         InstructionsArr = []
 
-
         #!!!!! Always close a file before reading it somewhere else, because this saves the acutal data
-    def executeFile(self):
-        currentFile = open("Instructions.gcode", "r")
-        instructions = currentFile.readlines()
+    # def executeFile(self):
+    #     currentFile = open("Instructions.gcode", "r")
+    #     instructions = currentFile.readlines()
 
-        print("file is being read")
-        print(len(instructions))
-        #print(instructions)
-        #print(bytes(instructions[2], "utf-8"))
-        for i in range(0, (len(instructions))):
-            print(i)
-            print(bytes(instructions[i], "utf-8"))
-            self.ser.write(bytes(instructions[i], "utf-8"))
-            output = self.ser.readline()
-            if output == b"ok\r\n":
-                print("ok")
-            else:
-                print(output)     
-            sleep(0.2) 
+    #     print("file is being read")
+    #     print(len(instructions))
+    #     #print(instructions)
+    #     #print(bytes(instructions[2], "utf-8"))
+    #     for i in range(0, (len(instructions))):
+    #         print(i)
+    #         print(bytes(instructions[i], "utf-8"))
+    #         self.ser.write(bytes(instructions[i], "utf-8"))
+    #         output = self.ser.readline()
+    #         if output == b"ok\r\n":
+    #             print("ok")
+    #         else:
+    #             print(output)     
+    #         sleep(0.2) 
+
+        
         # print("deleting file")
         # os.remove("Instructions.gcode")
     
@@ -95,29 +110,36 @@ class SerialManager:
         self.ser.close()
 
 class GcodeGenerator:
-
+    
     def lineTest(self):
-        file = open("Instructions.gcode", "w")
+        global InstructionsArr
+        # file = open("Instructions.gcode", "w")
         InstructionsArr.append("G0 X100 Y100\r\n") # move the pen of to the middle a bit
-        InstructionsArr.append("M4 S100\r\n")#pen down
+        InstructionsArr.append("M4 S100\r\n") #pen down
         InstructionsArr.append("G4 P1000\r\n")
         InstructionsArr.append("G1 X20\r\n")
         InstructionsArr.append("G1 Y20\r\n")
         InstructionsArr.append("M5\r\n")
-        print("Testline File created")
-        file.close()
+        # print("Testline File created")
+        # file.close()
 
     def penDown(self):
+        global InstructionsArr
         #print("Starting Pen Down")
         #file = open("Instructions.gcode", "w")
-        InstructionsArr.append("M4 S100\r\n")
-        InstructionsArr.append("G4 P1\r\n")
+        InstructionsArr.append("M4 S0\r\n") 
+        InstructionsArr.append("G4 P300\r\n")
+        # InstructionsArr.append("M4 S0\r\n")
         # InstructionsArr.append("M5\r\n")
+
     def penUp(self):
-        InstructionsArr.append("M5\r\n")
-        InstructionsArr.append("G4 P1\r\n")
+        global InstructionsArr
+        # InstructionsArr.append("M4 S0\r\n")
+        InstructionsArr.append("M4 S90\r\n")
+        InstructionsArr.append("G4 P300\r\n")
 
     def calibrate(self):
+        global InstructionsArr
         print("calibrating...")
         # file = open("Instructions.gcode", "w")
         InstructionsArr.append("G28\r\n")
@@ -126,15 +148,18 @@ class GcodeGenerator:
         # file.close() 
 
     def drawPoint(self, x, y):
+        global InstructionsArr
         InstructionsArr.append("G0 X" + str(x) + " Y" + str(y) +"\r\n")
         self.penDown()
         self.penUp()
 
     def offsetCalibration(self):
+        global InstructionsArr
         print("Offset, calibrating")
         self.drawPoint(10, 10)
 
     def cross(self, centerPoint): 
+        global InstructionsArr
         print("Cross")
         # this function draws a cross starting TL to BR -> BL to TR
         half_squareLength = squareLength/2
@@ -149,6 +174,7 @@ class GcodeGenerator:
         InstructionsArr.append("G0 X0 Y0" + "\r\n") 
     
     def drawPlayingField():
+        global InstructionsArr
         print("Setting up...")
 
 class player:
@@ -157,7 +183,6 @@ class player:
 
 ai = player("X") 
 human = player("O")
-
 
 def checkDraw():
     freespaces = 0
@@ -239,7 +264,6 @@ def minimax(playingboard, isMaximizing):
             return -1
         if result == 0:
             return 0
-
     
     if (isMaximizing):
         bestScore = -800

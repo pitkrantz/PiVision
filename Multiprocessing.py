@@ -1,12 +1,31 @@
+import multiprocessing
 import cv2
 import numpy as np
 from time import sleep
 from math import sqrt
 import BotManager
 
-print("Starting...")
+print("Starting... 🚀")
 
-cap = cv2.VideoCapture(0)
+
+serialData = multiprocessing.Value("i", 0)
+
+multiprocessing.set_start_method("fork")
+readyToSend = multiprocessing.Value("i", 0)
+
+
+def executeManager():
+    while True:
+        print(readyToSend.value)
+        if readyToSend.value == 1:
+            serial.executeArr()
+            sleep(0.5)
+            readyToSend.value = 0
+
+
+# 1 WebCam
+# 2 Gopro
+cap = cv2.VideoCapture(1)
 sleep(2.5)
 
 connected = False
@@ -32,6 +51,20 @@ generator = BotManager.GcodeGenerator()
 try:
     serial = BotManager.SerialManager()
     connected = True
+    
+    def runProcess(newData):
+        while True:
+            if newData.value == 1:
+                newProcess = process
+                newProcess.start()
+                newProcess.join() 
+                newProcess.kill()
+                newData.value = 0
+
+    process = multiprocessing.Process(target=serial.executeArr) 
+    
+    masterProcess = multiprocessing.Process(target=runProcess(newProcess=serialData))
+    
 
 except Exception as e:
     # print("Serial error")
@@ -432,6 +465,9 @@ realCirlces = []
 # if starting:
 #     bestMove()
 
+
+masterProcess.start()
+
 while True:
     CirclesDuringFrame = []
 
@@ -532,6 +568,7 @@ while True:
             currentMode = modes.testing
 
         if key == 27:
+            process.kill()
             break
 
     if currentMode == modes.offset:
@@ -588,13 +625,23 @@ while True:
             currentMode = modes.menu
 
         if key == 49:
-            generator.penUp()
-            generator.penDown()
-            serial.executeArr()
+            if connected:
+                generator.penUp()
+                generator.penDown()
+                serialData.value = 1
+                # serial.executeArr()
+                # process.start()
+            else:
+                print("Not Connected")
 
         if key == 50:
-            generator.lineTest()
-            serial.executeArr()
+            if connected:
+                generator.lineTest()
+                serialData.value = 1
+                # serial.executeArr()
+                # process.start()
+            else:
+                print("Not Connected")
 
     if currentMode == modes.cancel:
         if key == 89 or key == 121:
