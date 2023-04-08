@@ -1,34 +1,28 @@
 import multiprocessing
+import threading
 import cv2
 import numpy as np
 from time import sleep
 from math import sqrt
+import ctypes
 import BotManager
 
 print("Starting... 🚀")
 
-
-serialData = multiprocessing.Value("i", 0)
-
 multiprocessing.set_start_method("fork")
+
 readyToSend = multiprocessing.Value("i", 0)
 
+myArray = multiprocessing.Array(ctypes.c_wchar_p, [])
 
-def executeManager():
-    while True:
-        print(readyToSend.value)
-        if readyToSend.value == 1:
-            serial.executeArr()
-            sleep(0.5)
-            readyToSend.value = 0
-
+connected = multiprocessing.Value("i", 0)
 
 # 1 WebCam
 # 2 Gopro
 cap = cv2.VideoCapture(1)
 sleep(2.5)
 
-connected = False
+# connected = False
 
 try:
     configFile = open("config.txt", "r")
@@ -49,28 +43,25 @@ except:
 generator = BotManager.GcodeGenerator()
 
 try:
-    serial = BotManager.SerialManager()
-    connected = True
-    
-    def runProcess(newData):
+    # serial = BotManager.SerialManager()
+    def executeManager():
+        serial = BotManager.SerialManager()
         while True:
-            if newData.value == 1:
-                newProcess = process
-                newProcess.start()
-                newProcess.join() 
-                newProcess.kill()
-                newData.value = 0
+            if readyToSend.value == 1:
+                t1 = threading.Thread(target=serial.executeArr)
+                t1.start()
+                t1.join()
+                readyToSend.value = 0
+            sleep(0.1)
 
-    process = multiprocessing.Process(target=serial.executeArr) 
-    
-    masterProcess = multiprocessing.Process(target=runProcess(newProcess=serialData))
-    
+    masterProcess = multiprocessing.Process(target=executeManager)
+    connected.value = 1
 
 except Exception as e:
     # print("Serial error")
     print(e)
     print("PS: Check if arduino ide is closed")
-    connected = False
+    connected.value = 0
 
 # modes = ["menu", "calibrate", "offset", "play", "testing"]
 class modes():
@@ -125,6 +116,7 @@ def drawTesting():
     cv2.putText(frame, "TESTING", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
     cv2.putText(frame, "1. Pen Down/Up", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA) 
     cv2.putText(frame, "2. XY movement", (50, 110), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    # cv2.putText(frame, "3. Check datalines", (50, 140), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
 
 class player:
     def __init__(self, symbol):
@@ -533,6 +525,7 @@ while True:
                    print("Bot makes moves")
 
                    #here comes the code which makes the robot do its moves
+
                 #    generator.n()
                 #    serial.executeArr() 
 
@@ -568,7 +561,7 @@ while True:
             currentMode = modes.testing
 
         if key == 27:
-            process.kill()
+            masterProcess.kill()
             break
 
     if currentMode == modes.offset:
@@ -578,24 +571,24 @@ while True:
             currentMode = modes.menu
 
         if key == 13:
-            if connected:
+            if bool(connected.value):
                 generator.offsetCalibration()
-                serial.executeArr()
+                readyToSend.value = 1
             else:
                 print("Not Connected")
         if key == 32:
-            if connected:
+            if bool(connected.value):
                 generator.drawPoint(xOffset, yOffset)
-                serial.executeArr()
+                readyToSend.value = 1
             else:
                 print("Not Connected")
 
     if currentMode == modes.calibrate:
         if key == 13:
-            if connected:
+            if bool(connected.value):
                 print("Calibration starting")
                 generator.calibrate()
-                serial.executeArr() 
+                readyToSend.value = 1
             else:
                 print("Not Connected")
         
@@ -625,19 +618,19 @@ while True:
             currentMode = modes.menu
 
         if key == 49:
-            if connected:
+            if bool(connected.value):
                 generator.penUp()
-                generator.penDown()
-                serialData.value = 1
+                readyToSend.value = 1
+
                 # serial.executeArr()
                 # process.start()
             else:
                 print("Not Connected")
 
         if key == 50:
-            if connected:
+            if bool(connected.value):
                 generator.lineTest()
-                serialData.value = 1
+                readyToSend.value = 1
                 # serial.executeArr()
                 # process.start()
             else:

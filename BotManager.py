@@ -55,7 +55,6 @@ class SerialManager:
         # self.ser = serial.Serial(robotPort, 115200)
         self.ser = getPort()
         sleep(1)
-        
         response = self.ser.readline()
         if response == b"\r\n":
             response = self.ser.readline()
@@ -80,6 +79,7 @@ class SerialManager:
             output = self.ser.readline()
             print(output)
             # sleep(0.1)
+        print("done")
         InstructionsArr = []
 
         #!!!!! Always close a file before reading it somewhere else, because this saves the acutal data
@@ -128,7 +128,7 @@ class GcodeGenerator:
         #print("Starting Pen Down")
         #file = open("Instructions.gcode", "w")
         InstructionsArr.append("M4 S0\r\n") 
-        InstructionsArr.append("G4 P300\r\n")
+        # InstructionsArr.append("G4 P300\r\n")
         # InstructionsArr.append("M4 S0\r\n")
         # InstructionsArr.append("M5\r\n")
 
@@ -136,7 +136,7 @@ class GcodeGenerator:
         global InstructionsArr
         # InstructionsArr.append("M4 S0\r\n")
         InstructionsArr.append("M4 S90\r\n")
-        InstructionsArr.append("G4 P300\r\n")
+        # InstructionsArr.append("G4 P300\r\n")
 
     def calibrate(self):
         global InstructionsArr
