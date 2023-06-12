@@ -1,28 +1,25 @@
 import multiprocessing
+multiprocessing.set_start_method("fork")
 import threading
 import cv2
 import numpy as np
+import ctypes
 from time import sleep
 from math import sqrt
-import ctypes
 import BotManager
 
 print("Starting... 🚀")
 
-multiprocessing.set_start_method("fork")
+readyToSend = multiprocessing.Value(ctypes.c_bool, True)
 
-readyToSend = multiprocessing.Value("i", 0)
+connected = multiprocessing.Value(ctypes.c_bool, False)
 
-myArray = multiprocessing.Array(ctypes.c_wchar_p, [])
-
-connected = multiprocessing.Value("i", 0)
+myArray = multiprocessing.Array(ctypes.c_wchar_p, [""])
 
 # 1 WebCam
 # 2 Gopro
 cap = cv2.VideoCapture(1)
 sleep(2.5)
-
-# connected = False
 
 try:
     configFile = open("config.txt", "r")
@@ -47,21 +44,22 @@ try:
     def executeManager():
         serial = BotManager.SerialManager()
         while True:
-            if readyToSend.value == 1:
+            if readyToSend.Value == True:
+                readyToSend = False
                 t1 = threading.Thread(target=serial.executeArr)
                 t1.start()
                 t1.join()
-                readyToSend.value = 0
+                readyToSend.value = True
             sleep(0.1)
 
     masterProcess = multiprocessing.Process(target=executeManager)
-    connected.value = 1
+    connected.Value = True
 
 except Exception as e:
     # print("Serial error")
     print(e)
     print("PS: Check if arduino ide is closed")
-    connected.value = 0
+    connected.Value = False
 
 # modes = ["menu", "calibrate", "offset", "play", "testing"]
 class modes():
@@ -571,24 +569,24 @@ while True:
             currentMode = modes.menu
 
         if key == 13:
-            if bool(connected.value):
+            if connected.Value:
                 generator.offsetCalibration()
-                readyToSend.value = 1
+                # readyToSend.Value = True
             else:
                 print("Not Connected")
         if key == 32:
-            if bool(connected.value):
+            if connected.Value:
                 generator.drawPoint(xOffset, yOffset)
-                readyToSend.value = 1
+                # readyToSend.Value = True
             else:
                 print("Not Connected")
 
     if currentMode == modes.calibrate:
         if key == 13:
-            if bool(connected.value):
+            if connected.Value:
                 print("Calibration starting")
                 generator.calibrate()
-                readyToSend.value = 1
+                # readyToSend.Value = True
             else:
                 print("Not Connected")
         
@@ -618,9 +616,10 @@ while True:
             currentMode = modes.menu
 
         if key == 49:
-            if bool(connected.value):
+            if connected.Value:
+                print(BotManager.myArray.Value)
                 generator.penUp()
-                readyToSend.value = 1
+                # readyToSend.Value = True
 
                 # serial.executeArr()
                 # process.start()
@@ -628,9 +627,9 @@ while True:
                 print("Not Connected")
 
         if key == 50:
-            if bool(connected.value):
+            if connected.Value:
                 generator.lineTest()
-                readyToSend.value = 1
+                # readyToSend.Value = True
                 # serial.executeArr()
                 # process.start()
             else:

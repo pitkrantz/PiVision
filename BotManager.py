@@ -1,8 +1,11 @@
 import serial
+import multiprocessing
+import ctypes
 from time import sleep
 from math import sqrt
 
 #really M4S(degree) but 90 is 180 haven't changed that yet
+#PIN 11
 #!!!!!!! M4 S100 -> HIGH
 # M5 -> LOW
 
@@ -20,6 +23,8 @@ boardcoords = [
 ]
 
 InstructionsArr = []
+
+# myArray = multiprocessing.Array(ctypes.c_wchar_p, [""])
 
 diagonal = 420
 squareLength = diagonal/sqrt(2)
