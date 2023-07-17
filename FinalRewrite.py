@@ -31,7 +31,7 @@ except:
 
 ################ Main Process ################
 
-def main(InstructionsArray):
+def main(shared_array, connected):
     print("Starting...🚀")
     # 1 Webcam
     # 2 Gopro
@@ -46,6 +46,7 @@ def main(InstructionsArray):
         inProgess = 4
         cancel = 5
         testing = 6
+        inProgress = 7
 
     modes = modes()
 
@@ -297,40 +298,289 @@ def main(InstructionsArray):
         else:
             print("Error")
 
+    class Circle:
+        def __init__(self, x, y, r):
+            self.x = x
+            self.y = y
+            self.r = r
+            self.number = 1
+            self.row = None
+            self.cloumn = None
 
+    def deleteCopies(inputCircles, threshhold = 40):
+        Copies = []
+        
+        for i in range(0, len(inputCircles)):
+            if i == len(inputCircles)-1:
+                pass
+            else:
+                for j in range(i, len(inputCircles)):
+                    if j == len(inputCircles)-1:
+                        pass
+                    else:
+                        if inputCircles[j+1].x - threshhold < inputCircles[i].x and inputCircles[i].x < inputCircles[j+1].x + threshhold and inputCircles[j+1].y - threshhold < inputCircles[i].y and inputCircles[i].y < inputCircles[j+1].y + threshhold:
+                            Copies.append(j+1)
 
+        Copies.reverse()
+        for i in Copies:
+            inputCircles.pop(i)
+        return inputCircles
+    
+    def CheckCircles(inputCircles, threshhold = 40):
+        Copies = []
 
+        for i in range(0, len(inputCircles)):
+            if i == len(inputCircles)-1:
+                pass
+            else:
+                for j in range(i, len(inputCircles)):
+                    if j == len(inputCircles)-1:
+                        pass
+                    else:
+                        if inputCircles[j+1].x - threshhold < inputCircles[i].x and inputCircles[i].x < inputCircles[j+1].x + threshhold and inputCircles[j+1].y - threshhold < inputCircles[i].y and inputCircles[i].y < inputCircles[j+1].y + threshhold:
+                            inputCircles[i].number += 1
+                            Copies.append(j+1)
 
+        if len(Copies) != 0:
+            realCopies = []
+            for i in Copies:
+                if i not in realCopies:
+                    realCopies.append(i)
+            realCopies.sort()
+            realCopies.reverse()
+            for i in realCopies:
+                inputCircles.pop(i)
+        return inputCircles
 
+    points = np.array([[100,100],[1820,100],[1820,980],[100,980]], np.int32)
+    
+    detectedCircles = 0
+    frames = 0
+
+    numberofCircles = 0
+
+    CombinedCircles = []
+    realCircles = []
+    
 
     while True:
+        CirclesDuringFrame = []
+
         _, frame = cap.read()
+        
+        grayFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        blurFrame = cv2.GaussianBlur(grayFrame, (13,13), 0)
+        if currentMode == modes.menu:
+                drawMenu()
+        if currentMode == modes.calibrate:
+            drawCalibrate()
+        if currentMode == modes.offset:
+            drawOffset()
+        if currentMode == modes.play:
+            drawPlay()
+        if currentMode == modes.cancel:
+            drawCancel()
+        if currentMode == modes.inProgress:
+            drawInProgress()
+        if currentMode == modes.testing:
+            drawTesting()
+
+        if show:
+            circles = cv2.HoughCircles(blurFrame, cv2.HOUGH_GRADIENT, 1.2, 100, param1= 100, param2 = 45, minRadius = 20, maxRadius = 150)
+            if circles is not None:
+                detectedCircles += 1
+                circles = np.uint16(np.around(circles))
+
+                for circle in circles[0, :]:
+                    newcircle = Circle(circle[0], circle[1], circle[2])
+                    CirclesDuringFrame.append(newcircle)
+                    CirclesDuringFrame = deleteCopies(CirclesDuringFrame)
+
+                    for circle in CirclesDuringFrame:
+                        CombinedCircles.append(circle)
+                for i in circles[0, :]:
+                    cv2.circle(frame, (i[0], i[1]), i[2], (0, 255, 0), 3)
+
+            if frames == 20:
+
+                realCircles = CheckCircles(CombinedCircles, 100)
+
+                for circle in realCircles:
+                    if circle.number <= 19:
+                        realCircles.remove(circle)
+        
+                updateBoard()
+
+                changed, row, column = checkBoard()
+                oldboard = board
+
+                if changed:
+                    bestMove()
+                    print("Bot makes move")
+
+
+                    ################# here comes the new part i still have to write
+
+        
+                numberofCircles = len(realCircles)
+
+                try:
+                    print("Found circles" + CombinedCircles[0].x, CombinedCircles[0].y, CombinedCircles[0].r)
+                except:
+                    print("No circles")
+                CombinedCircles = []
+                realCircles = []
+                frames = 0
+
+            frames += 1
+        
+        numberofCirclesView = cv2.putText(frame, "Number of Circles: " + str(numberofCircles),(1500, 50),cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 1, cv2.LINE_AA)
 
         cv2.imshow("Frame", frame)
 
         key = cv2.waitKey(1)
 
+        ########## menu mode
+
+        if currentMode == modes.menu:
+            if key == 49:
+                currentMode = modes.calibrate
+        
+            if key == 50:
+                currentMode = modes.offset
+        
+            if key == 51:
+                currentMode = modes.play
+
+            if key == 52:
+                currentMode = modes.testing
+
+            if key == 27:
+                break 
+        
+        ########### offset mode
+        if currentMode == modes.offset:
+            cv2.setMouseCallback("Frame", offsetPoint)
+
+            if key == 27:
+                currentMode = modes.menu
+
+            if key == 13:
+                if connected.value:
+                    generator.offsetCalibration()
+                    # readyToSend.Value = True
+                else:
+                    print("Not Connected")
+            if key == 32:
+                if connected.value:
+                    generator.drawPoint(xOffset, yOffset)
+                    # readyToSend.Value = True
+                else:
+                    print("Not Connected")
+        
+        ############# calibration mode
+
+        if currentMode == modes.calibrate:
+            if key == 13:
+                if connected.value:
+                    print("Calibration starting")
+                    generator.calibrate()
+                    # readyToSend.Value = True
+                else:
+                    print("Not Connected")
+        
+            if key == 27:
+                currentMode = modes.menu
+
+        ############### playing mode
+
+        if currentMode == modes.play:
+            if gameStarted == False:
+                #bot starts
+                if key == 67 or key == 99:
+                    starting = True
+                    currentMode = modes.inProgress
+                # player starts
+                if key == 80 or key == 112:
+                    starting = False
+                    currentMode = modes.inProgress
+
+
+        ############# in progress mode
+
+        if currentMode == modes.inProgress:
+            if key == 27:
+                currentMode = modes.cancel
+            if key == 32:
+                show = not show 
+
+        ############### testing mode
+
+        if currentMode == modes.testing:
+            BotManager.InstructionsArr = []
+            if key == 27:
+                currentMode = modes.menu
+
+            if key == 49:
+                if connected.value:
+                    print(BotManager.myArray.Value)
+                    generator.penUp()
+                else:
+                    print("Not Connected")
+
+            if key == 50:
+                if connected.value:
+                   shared_array[0] = 3 
+                else:
+                    print("Not Connected")
+
+        if currentMode == modes.cancel:
+            if key == 89 or key == 121:
+                currentMode = modes.menu
+                board = [
+                            # 0    1    2
+                            ["/", "/", "/"],    #row 0
+                            ["/", "/", "/"],    #row 1
+                            ["/", "/", "/"]     #row 2
+                        ]
+            if key == 78 or key == 110:
+                currentMode = modes.inProgress
+
 ################ Sub Process ############################
 
-def com(InstructionsArray):
-    print("COM starting")        
+def com(shared_array, connected):
+    print("COM starting")
+    # GArray = []
     
     generator = BotManager.GcodeGenerator()
-
+ 
     try:
-        def executeManager():
-            serial = BotManager.SerialManager()
-            while True:
-                if InstructionsArray[0] == 0:
-                    print("executing")
+        serial = BotManager.SerialManager()
+        connected.value = 1
     except:
-        print("Error with execution")
+        print("Error initialising Serial Manager")
+
+    while True:
+        if shared_array[0] != 0:
+            
+
+
+
+
+           # 3 -> lineTest 
+            if shared_array[0] ==3 :
+                generator.lineTest()
+                serial.executeArr()
+                shared_array[:] = 0
 
 ##################################################
 
 if __name__ == "__main__":
     
-    shared_array = multiprocessing.Array("i", 3)
+    Array = multiprocessing.Array("i", 3)
+    isConnected = multiprocessing.Value("i", 0)
+    isConnected.value = 0
+
     # The first number communicates the mode or what should be done
     # 0 -> is used as an indicator, which shows that the robot is ready to receive new data (replaces readyToSend value)
     # 1 -> draw new playing field, 
@@ -340,8 +590,8 @@ if __name__ == "__main__":
     # 5 -> draw Point for calibration with camera
 
 
-    main_process = multiprocessing.Process(target=main, args=(shared_array, ))
-    io_process = multiprocessing.Process(target=com, args=(shared_array, ))
+    main_process = multiprocessing.Process(target=main, args=(Array, isConnected, ))
+    io_process = multiprocessing.Process(target=com, args=(Array, isConnected, ))
 
     main_process.start()
     io_process.start()

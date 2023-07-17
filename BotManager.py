@@ -27,7 +27,7 @@ InstructionsArr = []
 # myArray = multiprocessing.Array(ctypes.c_wchar_p, [""])
 
 diagonal = 420
-squareLength = diagonal/sqrt(2)
+# squareLength = diagonal/sqrt(2)
 squareLength = 297
 # this approach uses a temporary gcode file, which might not be the best for your harddrive (SSD) 
 # so I might implement a version where you just save them in a long string or an array or something stored in memory -> done is used right now
@@ -35,14 +35,15 @@ squareLength = 297
 # robotPort = "/dev/tty.usbmodem212301"
 # robotPort = "/dev/tty.usbmodem212101"
 # robotPort = "/dev/tty.usbmodem112301"
-ports = ["/dev/tty.usbmodem212101", "/dev/tty.usbmodem112301", "/dev/tty.usbmodem212301"]
+ports = ["/dev/tty.usbmodem212301", "/dev/tty.usbmodem212101", "/dev/tty.usbmodem112301"]
 # robotPort = "/dev/tty.usbmodem212301"
 
 def getPort():
     for port in ports:
         try:
-             # print("Checking port " + port)
+             print("Checking port " + port)
              connectedPort = serial.Serial(port, 115200)
+             print("The correct port is " + port)
              return connectedPort
         except Exception as e:
              print(e)
@@ -200,6 +201,7 @@ def checkDraw():
         return True
     else:
         return False
+
 def checkWinner():
     if board[0][0] == board[0][1] and board[0][1] == board[0][2] and board[0][2] == "X":
         return "X"
@@ -245,6 +247,7 @@ def checkWinner():
     if checkDraw():
         return 0
     return None
+
 def bestMove():
     bestScore = -800
     move = [0, 0]
@@ -260,8 +263,8 @@ def bestMove():
                 
     board[move[0]][move[1]] = ai.symbol
     return move
-def minimax(playingboard, isMaximizing):
 
+def minimax(playingboard, isMaximizing):
     result = checkWinner()
     if result != None:
         if result == ai.symbol:

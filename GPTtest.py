@@ -15,7 +15,6 @@ def sub(a):
     print(a[:])
 
 if __name__ == "__main__":
-    
     shared_array = mp.Array("i", 2)
 
     main_process = mp.Process(target=main, args=(shared_array, ))
