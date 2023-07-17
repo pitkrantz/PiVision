@@ -1,25 +1,28 @@
-import multiprocessing
+import multiprocessing as mp
 from time import sleep
-import ctypes
 
-def com_process(ready):
-    while True:
-        if ready.value == 1:
-            for _ in range(50):
-                print("kek")
-                sleep(0.1)
-            ready.value = 0
+def main(a):
+    print(a[:])
+    sleep(2)
+    a[0] = 1
+    a[1] = 2
+    for number in a:
+       print(number) 
 
-def main():
-    ready = multiprocessing.Value("i", 0)
-    instr = multiprocessing.Array(ctypes.c_wchar_p, ["test"])
-    process = multiprocessing.Process(target=com_process, args=(ready, instr,))
-    process.start()
-
-    while True:
-        test = input("Moin: ")
-        if test == "1":
-            ready.value = 1
+def sub(a):
+    print(a[:])
+    sleep(2.5)
+    print(a[:])
 
 if __name__ == "__main__":
-    main()
+    
+    shared_array = mp.Array("i", 2)
+
+    main_process = mp.Process(target=main, args=(shared_array, ))
+    subP = mp.Process(target=sub, args=(shared_array, )) 
+
+    main_process.start()
+    subP.start()
+
+    main_process.join()
+    subP.join()

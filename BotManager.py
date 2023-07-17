@@ -28,9 +28,10 @@ InstructionsArr = []
 
 diagonal = 420
 squareLength = diagonal/sqrt(2)
+squareLength = 297
 # this approach uses a temporary gcode file, which might not be the best for your harddrive (SSD) 
 # so I might implement a version where you just save them in a long string or an array or something stored in memory -> done is used right now
-#  robotPort = "/dev/cu.usbserial-A10JYZY0" i don't know when this port was used but I'm keeping it here so I have it stored 
+# robotPort = "/dev/cu.usbserial-A10JYZY0" i don't know when this port was used but I'm keeping it here so I have it stored 
 # robotPort = "/dev/tty.usbmodem212301"
 # robotPort = "/dev/tty.usbmodem212101"
 # robotPort = "/dev/tty.usbmodem112301"
