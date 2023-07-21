@@ -16,6 +16,8 @@ squareLength = 297
 
 ports = ["/dev/tty.usbmodem212101", "/dev/tty.usbmodem112301", "/dev/tty.usbmodem212301"]
 
+# Offsets will probably not work because the x and y Offsets are in the main scope and are only updated for the subprocess at the start of the program
+
 try:
     configFile = open("config.txt", "r")
     offsets = configFile.readlines()
@@ -37,6 +39,9 @@ def main(shared_array, connected):
     # 2 Gopro
     cap = cv2.VideoCapture(1)
     sleep(2)
+
+    if shared_array[0] == 0:
+        ready = True
 
     class modes():
         menu = 0
@@ -116,7 +121,6 @@ def main(shared_array, connected):
 
     centerPoints = [[810,390], [1110, 390], [1110, 690], [810, 690]]
 
-
     def offsetPoint(event, x, y, flags, params):
         global xOffset
         global yOffset
@@ -188,7 +192,7 @@ def main(shared_array, connected):
         return None
 
     def bestMove():
-        besteScore = -800
+        bestScore = -800
         move = [0, 0] 
         for i in range(0,3):
             for j in range(0,3):
@@ -200,6 +204,7 @@ def main(shared_array, connected):
                         bestScore = score
                         move = [i, j]
         board[move[0]][move[1]] = ai.symbol
+        return move
 
     def minimax(playingboard, isMaximizing):
         result = checkWinner()
@@ -258,45 +263,45 @@ def main(shared_array, connected):
                 PointToCircle = distance((circle.x, circle.y), point)
                 if PointToCircle < (diagonal +20):
                     closePoints.append(point)
-            print(closePoints)
+                print(closePoints)
 
-        if len(closePoints) == 1:
-            PointA = centerPoints.index(closePoints[0])
-            if PointA == 0:
-                board[0][0] = "O"
-            if PointA == 1:
-                board[0][2] = "O"
-            if PointA == 2:
-                board[2][2] = "O"
-            if PointA == 3:
-                board[2][0] = "O"
+            if len(closePoints) == 1:
+                PointA = centerPoints.index(closePoints[0])
+                if PointA == 0:
+                    board[0][0] = "O"
+                if PointA == 1:
+                    board[0][2] = "O"
+                if PointA == 2:
+                    board[2][2] = "O"
+                if PointA == 3:
+                    board[2][0] = "O"
 
-            print("corner")
+                print("corner")
 
-        elif len(closePoints) == 2:
-            PointA = centerPoints.index(closePoints[0])
-            PointB = centerPoints.index(closePoints[1])
+            elif len(closePoints) == 2:
+                PointA = centerPoints.index(closePoints[0])
+                PointB = centerPoints.index(closePoints[1])
 
-            if (PointA == 0 and PointB == 1) or (PointA == 1 and PointB == 0):
-                board[0][1] = "O" 
+                if (PointA == 0 and PointB == 1) or (PointA == 1 and PointB == 0):
+                    board[0][1] = "O" 
 
-            if (PointA == 2 and PointB == 1) or (PointA == 1 and PointB == 2):
-                board[1][2] = "O" 
+                if (PointA == 2 and PointB == 1) or (PointA == 1 and PointB == 2):
+                    board[1][2] = "O" 
 
-            if (PointA == 2 and PointB == 3) or (PointA == 3 and PointB == 2):
-                board[2][1] = "O" 
+                if (PointA == 2 and PointB == 3) or (PointA == 3 and PointB == 2):
+                    board[2][1] = "O" 
 
-            if (PointA == 0 and PointB == 3) or (PointA == 3 and PointB == 0):
-                board[1][0] = "O" 
+                if (PointA == 0 and PointB == 3) or (PointA == 3 and PointB == 0):
+                    board[1][0] = "O"
 
-            print("edge")
+                print("edge")
 
-        elif len(closePoints) >= 3:
-            board[1][1] = "O"
-            print("center")
+            elif len(closePoints) >= 3:
+                board[1][1] = "O"
+                print("center")
         
-        else:
-            print("Error")
+            else:
+                print("Error cirlce isn't located in playingfield")
 
     class Circle:
         def __init__(self, x, y, r):
@@ -362,7 +367,6 @@ def main(shared_array, connected):
     CombinedCircles = []
     realCircles = []
     
-
     while True:
         CirclesDuringFrame = []
 
@@ -415,13 +419,17 @@ def main(shared_array, connected):
                 oldboard = board
 
                 if changed:
-                    bestMove()
-                    print("Bot makes move")
+                    nextMove = bestMove()
+
+                    print(nextMove)
+                    print("Bot makes move at " + str(nextMove[0]) + " and " + str(nextMove[1]))
+                    print("Please wait... ")
 
 
+                    ## basically just taking the field where the cross should be placed and passing it onto the io manager who converts
+                    # it into a Gcode instructions which is then send to the Arduino to be executed
                     ################# here comes the new part i still have to write
 
-        
                 numberofCircles = len(realCircles)
 
                 try:
@@ -459,6 +467,7 @@ def main(shared_array, connected):
                 break 
         
         ########### offset mode
+
         if currentMode == modes.offset:
             cv2.setMouseCallback("Frame", offsetPoint)
 
@@ -467,14 +476,15 @@ def main(shared_array, connected):
 
             if key == 13:
                 if connected.value:
-                    generator.offsetCalibration()
-                    # readyToSend.Value = True
+
+                    # still has to be implemented
+
+                    shared_array[0] = 5
                 else:
                     print("Not Connected")
             if key == 32:
                 if connected.value:
-                    generator.drawPoint(xOffset, yOffset)
-                    # readyToSend.Value = True
+                    shared_array[0] = 5
                 else:
                     print("Not Connected")
         
@@ -523,8 +533,8 @@ def main(shared_array, connected):
 
             if key == 49:
                 if connected.value:
-                    print(BotManager.myArray.Value)
-                    generator.penUp()
+                    # Pen down action
+                    print("Pen should go down")
                 else:
                     print("Not Connected")
 
@@ -543,6 +553,8 @@ def main(shared_array, connected):
                             ["/", "/", "/"],    #row 1
                             ["/", "/", "/"]     #row 2
                         ]
+                show = False
+
             if key == 78 or key == 110:
                 currentMode = modes.inProgress
 
@@ -562,16 +574,42 @@ def com(shared_array, connected):
 
     while True:
         if shared_array[0] != 0:
-            
 
-
-
-
-           # 3 -> lineTest 
-            if shared_array[0] ==3 :
-                generator.lineTest()
+            # 1 Draw playing field
+            if shared_array[0] == 1:
+                generator.drawPlayingField()
+                print(BotManager.InstructionsArr[:])
                 serial.executeArr()
-                shared_array[:] = 0
+                shared_array[0] = 0
+
+            # 2 Drawing Cross at coords
+            if shared_array[0] == 2:
+                generator.cross(0,1)
+                print(BotManager.InstructionsArr[:])
+                serial.executeArr()
+                shared_array[0] = 0
+
+            # 3 LineTest 
+            if shared_array[0] == 3 :
+                generator.lineTest()
+                print(BotManager.InstructionsArr[:])
+                serial.executeArr()
+                shared_array[0] = 0
+
+            # 4 calibrate Motors
+
+            if shared_array[0] == 4:
+                generator.calibrate()
+                print(BotManager.InstructionsArr[:])
+                serial.executeArr()
+                shared_array[0] = 0
+
+            # 4 Draw point at x and y offset
+
+            if shared_array[0] == 5:
+                generator.drawPoint(xOffset, yOffset)
+                serial.executeArr()
+                shared_array[0] = 0
 
 ##################################################
 
@@ -588,8 +626,7 @@ if __name__ == "__main__":
     # 3 -> lineTest
     # 4 -> calibrate motors
     # 5 -> draw Point for calibration with camera
-
-
+   
     main_process = multiprocessing.Process(target=main, args=(Array, isConnected, ))
     io_process = multiprocessing.Process(target=com, args=(Array, isConnected, ))
 

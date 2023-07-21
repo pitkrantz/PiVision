@@ -81,13 +81,27 @@ class SerialManager:
         #I think I will use this method in order to not put to much strain on the SSd by creating and deleting files + speed
         array = InstructionsArr
         print("executing")
+        i = 0
         for line in array:
+            print(line)
+            # if line(0) == "S":
+            #     sleep(int(line.strip("S")))
             self.ser.write(bytes(line, "utf-8"))
             output = self.ser.readline()
             print(output)
+            i += 1
+            print("Line number: " + str(i))
             # sleep(0.1)
         print("done")
         InstructionsArr = []
+
+
+        # I'm now implementing a custom sleep function because G4 makes problems
+        # so I will parse the lines and make sure the first letter isn't M nor G nor $
+        # and create S for sleep followed by an int in seconds the waittime which should be done
+        # This will be used to tell the robot how long it should wait for the pen to switch states, which still has to be mesured when the hardware is done.
+
+
 
         #!!!!! Always close a file before reading it somewhere else, because this saves the acutal data
     # def executeFile(self):
@@ -123,9 +137,19 @@ class GcodeGenerator:
         # file = open("Instructions.gcode", "w")
         InstructionsArr.append("G0 X100 Y100\r\n") # move the pen of to the middle a bit
         InstructionsArr.append("M4 S100\r\n") #pen down
-        InstructionsArr.append("G4 P1000\r\n")
-        InstructionsArr.append("G1 X20\r\n")
-        InstructionsArr.append("G1 Y20\r\n")
+        # InstructionsArr.append("G4 P1000\r\n")
+        
+        
+        
+        # own instruction to add delay  might have to use other letter rather than S
+        # InstructionsArr.append("S1\r\n")
+
+
+
+#### !!!!!! The F with the G1 command is used for the feed rate, which I think has to be specified for it to work -> otherwise error, unknown feed rate
+
+        InstructionsArr.append("G1 X20 F3000\r\n")
+        InstructionsArr.append("G1 Y20 F3000\r\n")
         InstructionsArr.append("M5\r\n")
         # print("Testline File created")
         # file.close()
@@ -165,8 +189,13 @@ class GcodeGenerator:
         print("Offset, calibrating")
         self.drawPoint(10, 10)
 
-    def cross(self, centerPoint): 
+
+    def cross(self, row, cloumn): 
         global InstructionsArr
+
+        # will have to look into the coordinates once the hardware is done
+        centerPoint = boardcoords[row][cloumn] 
+
         print("Cross")
         # this function draws a cross starting TL to BR -> BL to TR
         half_squareLength = squareLength/2
