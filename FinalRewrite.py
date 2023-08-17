@@ -553,6 +553,7 @@ def main(shared_array, connected):
                             ["/", "/", "/"],    #row 1
                             ["/", "/", "/"]     #row 2
                         ]
+
                 show = False
 
             if key == 78 or key == 110:
