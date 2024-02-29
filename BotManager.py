@@ -59,15 +59,15 @@ def getPort():
 
 class SerialManager:
     def __init__(self):
-        # self.ser = serial.Serial(robotPort, 115200)
         self.ser = getPort()
+        # self.ser = serial.Serial(robotPort, 115200)
         sleep(1)
         response = self.ser.readline()
         if response == b"\r\n":
             response = self.ser.readline()
         print(response)
         print("Connected")
-        # self.ser.write(b'G28 \r\n')
+        # self.ser.write (b'G28 \r\n')
         # output = self.ser.readline()
         # if output == b"ok\r\n":
         #     print("ok") 

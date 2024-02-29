@@ -13,7 +13,6 @@ def COM():
                     print("kek")
                 ready.value = 0
 
-
 def main():
     sub_thread = threading.Thread(target=COM)
     sub_thread.daemon = True
