@@ -16,7 +16,7 @@ squareLength = 297
 
 ports = ["/dev/tty.usbmodem212101", "/dev/tty.usbmodem112301", "/dev/tty.usbmodem212301"]
 
-# Offsets will probably not work because the x and y Offsets are in the main scope and are only updated for the subprocess at the start of the program
+# Offsets will  probably not work because the x and y Offsets are in the main scope and are only updated for the subprocess at the start of the program
 
 try:
     configFile = open("config.txt", "r")
@@ -39,7 +39,7 @@ def main(shared_array, connected):
     #Gopro -> 2
     cap = cv2.VideoCapture(1)
     sleep(2)
-
+    
     if shared_array[0] == 0:
         ready = True
 
